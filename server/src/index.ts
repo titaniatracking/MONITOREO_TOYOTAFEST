@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { createServer } from "node:http";
+import path from "node:path";
 import { Server } from "socket.io";
 import { config } from "./config";
 import { pool } from "./db/pool";
@@ -181,6 +182,15 @@ app.get("/api/traccar/devices", async (_request, response, next) => {
   }
 });
 
+const frontendPath = path.resolve(process.cwd(), "dist");
+app.use(express.static(frontendPath));
+app.use((request, response, next) => {
+  if (request.method === "GET" && request.accepts("html")) {
+    return response.sendFile(path.join(frontendPath, "index.html"));
+  }
+  return next();
+});
+
 io.on("connection", (socket) => {
   socket.emit("system:ready", {
     flespiConfigured: Boolean(config.flespi.token),
@@ -195,8 +205,8 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
   response.status(500).json({ error: message });
 });
 
-httpServer.listen(config.serverPort, "127.0.0.1", () => {
-  console.log(`ToyotaFest backend listening on http://127.0.0.1:${config.serverPort}`);
+httpServer.listen(config.serverPort, "0.0.0.0", () => {
+  console.log(`ToyotaFest listening on port ${config.serverPort}`);
 });
 
 async function checkDatabase() {

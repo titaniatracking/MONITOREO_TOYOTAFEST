@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const config = {
-  serverPort: Number(process.env.SERVER_PORT ?? 8087),
+  serverPort: Number(process.env.PORT ?? process.env.SERVER_PORT ?? 8087),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? "http://127.0.0.1:5177",
   flespi: {
     token: process.env.FLESPI_TOKEN ?? "",
