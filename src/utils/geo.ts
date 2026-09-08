@@ -5,23 +5,33 @@ export const EVENT_CENTER: GeoPoint = {
   lng: -78.4483948182255,
 };
 
-const EVENT_POLYGON_SOURCE: GeoPoint[] = [
-  { lat: -0.020209702295415, lng: -78.451972885051 },
-  { lat: -0.022763165097831, lng: -78.451844139019 },
-  { lat: -0.02284899577951, lng: -78.44623295776 },
-  { lat: -0.021121653301151, lng: -78.445321006694 },
-  { lat: -0.020435007838491, lng: -78.447241468349 },
-  { lat: -0.020198973460024, lng: -78.44775645248 },
+// Perimetro operativo trazado sobre el recinto indicado, sin incluir las vias,
+// el rio ni los sectores residenciales colindantes.
+export const EVENT_POLYGON: GeoPoint[] = [
+  { lat: -0.02072542, lng: -78.449665185 },
+  { lat: -0.020715677, lng: -78.449172655 },
+  { lat: -0.020686448, lng: -78.448662106 },
+  { lat: -0.020715677, lng: -78.448241653 },
+  { lat: -0.020793622, lng: -78.447971362 },
+  { lat: -0.020998228, lng: -78.447731104 },
+  { lat: -0.021154118, lng: -78.447520878 },
+  { lat: -0.02122232, lng: -78.447328671 },
+  { lat: -0.02137821, lng: -78.447226561 },
+  { lat: -0.021631532, lng: -78.447220554 },
+  { lat: -0.021836137, lng: -78.447292632 },
+  { lat: -0.021953055, lng: -78.447430781 },
+  { lat: -0.022011514, lng: -78.447671039 },
+  { lat: -0.022079716, lng: -78.448169576 },
+  { lat: -0.022138175, lng: -78.448421847 },
+  { lat: -0.022079716, lng: -78.448692138 },
+  { lat: -0.022001771, lng: -78.44923272 },
+  { lat: -0.022040743, lng: -78.449442946 },
+  { lat: -0.022157661, lng: -78.449611127 },
+  { lat: -0.021836137, lng: -78.449593108 },
+  { lat: -0.021504871, lng: -78.449617134 },
+  { lat: -0.021232063, lng: -78.449593108 },
+  { lat: -0.020968998, lng: -78.449647166 },
 ];
-
-// Ajusta el poligono recibido al perimetro operativo del recinto, conservando
-// su centro y forma para que no cubra las vias y urbanizaciones colindantes.
-const EVENT_GEOFENCE_SCALE = 0.55;
-
-export const EVENT_POLYGON: GeoPoint[] = EVENT_POLYGON_SOURCE.map((point) => ({
-  lat: EVENT_CENTER.lat + (point.lat - EVENT_CENTER.lat) * EVENT_GEOFENCE_SCALE,
-  lng: EVENT_CENTER.lng + (point.lng - EVENT_CENTER.lng) * EVENT_GEOFENCE_SCALE,
-}));
 
 export const MAP_BOUNDS = {
   north: EVENT_CENTER.lat + 0.075,
