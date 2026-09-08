@@ -5,7 +5,7 @@ export const EVENT_CENTER: GeoPoint = {
   lng: -78.4483948182255,
 };
 
-export const EVENT_POLYGON: GeoPoint[] = [
+const EVENT_POLYGON_SOURCE: GeoPoint[] = [
   { lat: -0.020209702295415, lng: -78.451972885051 },
   { lat: -0.022763165097831, lng: -78.451844139019 },
   { lat: -0.02284899577951, lng: -78.44623295776 },
@@ -13,6 +13,15 @@ export const EVENT_POLYGON: GeoPoint[] = [
   { lat: -0.020435007838491, lng: -78.447241468349 },
   { lat: -0.020198973460024, lng: -78.44775645248 },
 ];
+
+// Ajusta el poligono recibido al perimetro operativo del recinto, conservando
+// su centro y forma para que no cubra las vias y urbanizaciones colindantes.
+const EVENT_GEOFENCE_SCALE = 0.55;
+
+export const EVENT_POLYGON: GeoPoint[] = EVENT_POLYGON_SOURCE.map((point) => ({
+  lat: EVENT_CENTER.lat + (point.lat - EVENT_CENTER.lat) * EVENT_GEOFENCE_SCALE,
+  lng: EVENT_CENTER.lng + (point.lng - EVENT_CENTER.lng) * EVENT_GEOFENCE_SCALE,
+}));
 
 export const MAP_BOUNDS = {
   north: EVENT_CENTER.lat + 0.075,
@@ -32,6 +41,21 @@ export function distanceKm(a: GeoPoint, b: GeoPoint) {
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+}
+
+export function isInsideEventGeofence(point: GeoPoint) {
+  let inside = false;
+
+  for (let current = 0, previous = EVENT_POLYGON.length - 1; current < EVENT_POLYGON.length; previous = current, current += 1) {
+    const a = EVENT_POLYGON[current];
+    const b = EVENT_POLYGON[previous];
+    const crossesLatitude = a.lat > point.lat !== b.lat > point.lat;
+    const boundaryLng = ((b.lng - a.lng) * (point.lat - a.lat)) / (b.lat - a.lat || Number.EPSILON) + a.lng;
+
+    if (crossesLatitude && point.lng < boundaryLng) inside = !inside;
+  }
+
+  return inside;
 }
 
 export function bearingDeg(from: GeoPoint, to: GeoPoint) {

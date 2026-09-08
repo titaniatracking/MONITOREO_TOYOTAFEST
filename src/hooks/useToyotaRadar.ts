@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityEvent, VehicleApiResponse, VehicleStatus, VehicleTelemetry } from "../types";
 import { apiUrl } from "../utils/api";
-import { bearingDeg, corridorFor, distanceKm, etaMinutes, EVENT_CENTER } from "../utils/geo";
+import { bearingDeg, corridorFor, distanceKm, etaMinutes, EVENT_CENTER, isInsideEventGeofence } from "../utils/geo";
 import { statusLabel } from "../utils/labels";
 
 export function useToyotaRadar() {
@@ -73,7 +73,7 @@ function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<Vehicl
       const distanceToEvent = distanceKm(point, EVENT_CENTER);
       const speed = Number(vehicle.speed || 0);
       const timestamp = Number(vehicle.timestamp || Date.now());
-      const status = normalizeStatus(vehicle.status, distanceToEvent, speed, timestamp);
+      const status = normalizeStatus(vehicle.status, point, distanceToEvent, speed, timestamp);
       const plate = safeDisplayPlate(String(vehicle.plate || ""));
       const model = safeDisplayModel(String(vehicle.model || "Toyota"), plate);
       const trail = previous ? [...previous.trail, point].slice(-32) : [point];
@@ -156,9 +156,9 @@ async function fetchVehicles(url: string, timeoutMs: number, fallbackSource?: Ve
   }
 }
 
-function normalizeStatus(status: VehicleStatus | undefined, distanceToEvent: number, speed: number, timestamp: number): VehicleStatus {
+function normalizeStatus(status: VehicleStatus | undefined, point: { lat: number; lng: number }, distanceToEvent: number, speed: number, timestamp: number): VehicleStatus {
   if (Date.now() - timestamp > 1000 * 60 * 5 || status === "OFFLINE") return "OFFLINE";
-  if (distanceToEvent < 0.55) return "AT_EVENT";
+  if (isInsideEventGeofence(point)) return "AT_EVENT";
   if (distanceToEvent < 1.2) return "ARRIVING";
   if (distanceToEvent < 10 && speed > 3) return "APPROACHING";
   if (speed < 2) return "STOPPED";
