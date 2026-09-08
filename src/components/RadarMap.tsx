@@ -70,7 +70,7 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
     if (!selected) return;
     setMapCenter({ lat: selected.lat, lng: selected.lng });
     setMapZoom((zoom) => Math.max(SELECTED_FOCUS_ZOOM, zoom));
-  }, [selected?.id, selected?.lat, selected?.lng, selectedFocusKey]);
+  }, [selected?.id, selectedFocusKey]);
 
   useEffect(() => {
     if (!eventFocusKey) return;
