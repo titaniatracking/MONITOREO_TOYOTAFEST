@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import { LocateFixed, Minus, Plus } from "lucide-react";
 import type { VehicleTelemetry } from "../types";
-import { boundsFromCenter, clamp, EVENT_CENTER, EVENT_POLYGON, getStaticQuitoMapUrl, projectToMap, projectToMapRaw } from "../utils/geo";
+import { boundsFromCenter, clamp, EVENT_CENTER, EVENT_POLYGON, getQuitoTiles, projectToMap, projectToMapRaw } from "../utils/geo";
 import { corridorLabel, statusLabel } from "../utils/labels";
 
 interface RadarMapProps {
@@ -42,7 +42,7 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
   const mapBounds = useMemo(() => boundsFromCenter(mapCenter, mapZoom), [mapCenter, mapZoom]);
   const eventPoint = projectToMap(EVENT_CENTER, mapBounds);
   const selected = vehicles.find((vehicle) => vehicle.id === selectedId);
-  const mapUrl = useMemo(() => getStaticQuitoMapUrl(mapBounds), [mapBounds]);
+  const mapTiles = useMemo(() => getQuitoTiles(Math.round(mapZoom), mapBounds), [mapBounds, mapZoom]);
   const geofencePoints = useMemo(() => EVENT_POLYGON.map((point) => projectToMap(point, mapBounds)), [mapBounds]);
   const geofenceLabel = useMemo(
     () => ({
@@ -124,7 +124,17 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
       }}
     >
       <div className="map-world" style={worldStyle}>
-        <iframe className="quito-map-frame" src={mapUrl} title="Mapa de Quito" />
+        <div className="quito-map-tiles" aria-label="Mapa de Quito">
+          {mapTiles.map((tile) => (
+            <img
+              key={tile.key}
+              src={tile.url}
+              alt=""
+              draggable={false}
+              style={{ left: `${tile.left}%`, top: `${tile.top}%`, width: `${tile.width}%`, height: `${tile.height}%` }}
+            />
+          ))}
+        </div>
         <div className="map-satellite" />
         <div className="map-grid" />
         <div className="map-scan" />

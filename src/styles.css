@@ -700,17 +700,22 @@ button.summary-card {
   transition: none;
 }
 
-.quito-map-frame {
+.quito-map-tiles {
   position: absolute;
-  inset: -1px;
+  inset: 0;
   z-index: 0;
-  width: calc(100% + 2px);
-  height: calc(100% + 2px);
-  border: 0;
   background: #d7d3cb;
   filter: grayscale(0.08) brightness(0.96) contrast(1.08) saturate(1.05);
   opacity: 0.94;
   pointer-events: none;
+  overflow: hidden;
+}
+
+.quito-map-tiles img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  user-select: none;
 }
 
 .map-satellite {
