@@ -512,7 +512,7 @@ button.summary-card {
 }
 
 .content-grid > .map-card .radar-map {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 16 / 9;
   height: auto;
   min-height: 0;
 }
@@ -2045,6 +2045,7 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
     height: auto;
     padding: 10px;
   }
+  .content-grid > .map-card .radar-map { aspect-ratio: 4 / 3; }
   .side-stack {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 430px 620px;
