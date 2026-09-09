@@ -7,6 +7,7 @@ import {
   Gauge,
   Home,
   MapPinned,
+  Navigation,
   Route,
   Search,
   Settings,
@@ -276,9 +277,8 @@ function SummaryRow({
   return (
     <section className="summary-row">
       <SummaryCard icon={<CheckCircle2 size={26} />} label="En evento" value={stats.atEvent} hint={`${totalVehicles} vehiculos monitoreados`} tone="green" active={activeFilter === "AT_EVENT"} onClick={() => onFilter("AT_EVENT")} />
-      <SummaryCard icon={<Route size={26} />} label="En movimiento" value={stats.moving} hint="Rodando fuera de geocerca" tone="blue" active={activeFilter === "MOVING"} onClick={() => onFilter("MOVING")} />
       <SummaryCard icon={<TrendingUp size={26} />} label="Ingresando" value={stats.arriving} hint="Entrando a la geocerca" tone="yellow" active={activeFilter === "ARRIVING"} onClick={() => onFilter("ARRIVING")} />
-      <SummaryCard icon={<Car size={26} />} label="Saliendo" value={stats.departing} hint="Salida desde geocerca" tone="orange" active={activeFilter === "DEPARTING"} onClick={() => onFilter("DEPARTING")} />
+      <SummaryCard icon={<Navigation size={26} />} label="Vehiculos acercandose" value={stats.approaching} hint="Proximos a la geocerca" tone="blue" active={activeFilter === "APPROACHING"} onClick={() => onFilter("APPROACHING")} />
     </section>
   );
 }
