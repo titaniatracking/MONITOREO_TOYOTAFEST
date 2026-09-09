@@ -291,7 +291,7 @@ button { cursor: pointer; }
 .dashboard-main {
   position: relative;
   display: grid;
-  grid-template-rows: auto 104px minmax(920px, 76vh) minmax(260px, auto);
+  grid-template-rows: auto 104px auto minmax(260px, auto);
   gap: 16px;
   min-width: 0;
   min-height: calc(100vh - 24px);
@@ -450,17 +450,21 @@ button.summary-card {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(350px, 400px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   min-height: 0;
-  height: 100%;
+  height: auto;
 }
 
 .side-stack {
+  width: min(100%, 1280px);
   min-width: 0;
   min-height: 0;
+  justify-self: center;
   display: grid;
-  grid-template-rows: minmax(430px, 0.47fr) minmax(440px, 0.53fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 620px;
+  height: 620px;
   gap: 14px;
   overflow: hidden;
 }
@@ -498,6 +502,18 @@ button.summary-card {
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.content-grid > .map-card {
+  width: min(100%, 1280px);
+  height: auto;
+  justify-self: center;
+}
+
+.content-grid > .map-card .radar-map {
+  aspect-ratio: 1 / 1;
+  height: auto;
   min-height: 0;
 }
 
@@ -1935,11 +1951,11 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .sidebar-status { display: none; }
   .content-grid, .bottom-grid { grid-template-columns: minmax(0, 1fr); }
   .content-grid { height: auto; }
-  .content-grid > .map-card { height: 640px; }
+  .content-grid > .map-card { height: auto; }
   .side-stack {
     grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
-    grid-template-rows: 520px;
-    height: 520px;
+    grid-template-rows: 580px;
+    height: 580px;
   }
   .summary-row, .map-indicators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-main { overflow: visible; grid-template-rows: auto auto auto auto; }
@@ -2026,7 +2042,7 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .summary-card small { font-size: 9px; }
 
   .content-grid > .map-card {
-    height: clamp(480px, 70vh, 620px);
+    height: auto;
     padding: 10px;
   }
   .side-stack {
