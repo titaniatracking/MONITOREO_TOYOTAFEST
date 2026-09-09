@@ -33,6 +33,7 @@ const io = new Server(httpServer, {
 const flespi = new FlespiService({ token: config.flespi.token, baseUrl: config.flespi.baseUrl });
 const traccar = new TraccarService(config.traccar);
 const vapor = new VaporService(config.vaporDb);
+const EVENT_GEOFENCE_ID = 982;
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -182,6 +183,25 @@ app.get("/api/traccar/devices", async (_request, response, next) => {
   }
 });
 
+app.get("/api/geofence/event", async (_request, response, next) => {
+  try {
+    const geofence = await traccar.getGeofence(EVENT_GEOFENCE_ID);
+    if (!geofence) return response.status(404).json({ error: "Geocerca del evento no encontrada" });
+
+    const points = parseTraccarPolygon(geofence.area);
+    if (points.length < 3) return response.status(422).json({ error: "Geocerca del evento invalida" });
+
+    return response.json({
+      source: "traccar",
+      id: geofence.id,
+      name: geofence.name,
+      points,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 const frontendPath = path.resolve(process.cwd(), "dist");
 app.use(express.static(frontendPath));
 app.use((request, response, next) => {
@@ -243,4 +263,15 @@ async function enrichWithVapor(vehicles: Parameters<typeof savePositions>[0]) {
       plate: /^\d{10,}$/.test(String(vehicle.plate ?? "")) ? "SIN PLACA" : vehicle.plate,
     }));
   }
+}
+
+function parseTraccarPolygon(area: string) {
+  const match = area.match(/^POLYGON\s*\(\((.+)\)\)$/i);
+  if (!match) return [];
+
+  return match[1]
+    .split(",")
+    .map((pair) => pair.trim().split(/\s+/).map(Number))
+    .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
+    .map(([lat, lng]) => ({ lat, lng }));
 }

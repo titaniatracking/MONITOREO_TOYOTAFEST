@@ -24,7 +24,7 @@ import { StatusFilters } from "./components/StatusFilters";
 import { VehiclePanel } from "./components/VehiclePanel";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 import { useToyotaRadar } from "./hooks/useToyotaRadar";
-import type { VehicleSearchRecord, VehicleStatus, VehicleTelemetry } from "./types";
+import type { GeoPoint, VehicleSearchRecord, VehicleStatus, VehicleTelemetry } from "./types";
 import { apiUrl } from "./utils/api";
 import { corridorFor, distanceKm, etaMinutes, EVENT_CENTER } from "./utils/geo";
 import { statusLabel } from "./utils/labels";
@@ -43,7 +43,7 @@ const menuItems: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
 ];
 
 export function App() {
-  const { vehicles, events, stats, lastUpdate, source, loadingRealData, error } = useToyotaRadar();
+  const { vehicles, events, stats, lastUpdate, source, loadingRealData, error, eventPolygon } = useToyotaRadar();
   const backendHealth = useBackendHealth();
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<ViewKey>("summary");
@@ -206,7 +206,7 @@ export function App() {
           <>
             <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
             <section className="content-grid">
-              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} />
+              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} />
               <div className="side-stack">
                 <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
                 <section className="panel vehicle-card">
@@ -228,7 +228,7 @@ export function App() {
 
         {activeView === "map" && (
           <section className="single-view">
-            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} large />
+            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} large />
           </section>
         )}
 
@@ -288,6 +288,7 @@ function MapPanel(props: {
   activeFilter: VehicleStatus | "ALL";
   onFilter: (status: VehicleStatus) => void;
   vehicles: VehicleTelemetry[];
+  eventPolygon: GeoPoint[];
   selected: VehicleTelemetry | null;
   radarMode: boolean;
   cinematicMode: boolean;
@@ -318,7 +319,7 @@ function MapPanel(props: {
           <button className="event-jump" onClick={props.onEventFocus}>Ir a evento</button>
         </div>
       </div>
-      <RadarMap vehicles={props.vehicles} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
+      <RadarMap vehicles={props.vehicles} eventPolygon={props.eventPolygon} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
       {!props.vehicles.length && <EmptyOverlay title={props.loading ? "Cargando vehiculos reales" : "Sin vehiculos reales"} text={props.loading ? "Consultando Flespi, Traccar y MySQL." : "No llegaron posiciones reales para este rango del mapa."} />}
       <div className="map-legend">
         <span><i className="green" />En evento</span>

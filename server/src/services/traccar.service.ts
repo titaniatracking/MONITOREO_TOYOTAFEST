@@ -30,6 +30,13 @@ interface TraccarPosition {
   attributes?: Record<string, unknown>;
 }
 
+export interface TraccarGeofence {
+  id: number;
+  name: string;
+  description?: string;
+  area: string;
+}
+
 const EVENT_CENTER = { lat: -0.0212638, lng: -78.4483948 };
 const MAX_EVENT_DISTANCE_KM = 120;
 const MAX_LIVE_VEHICLES = 300;
@@ -47,6 +54,11 @@ export class TraccarService {
 
   async getPositions() {
     return this.request<TraccarPosition[]>("/api/positions");
+  }
+
+  async getGeofence(id: number) {
+    const geofences = await this.request<TraccarGeofence[]>("/api/geofences");
+    return geofences.find((geofence) => geofence.id === id) ?? null;
   }
 
   async getLiveVehicles(): Promise<VehicleTelemetry[]> {

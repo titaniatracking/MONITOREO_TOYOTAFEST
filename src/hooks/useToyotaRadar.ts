@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import type { ActivityEvent, VehicleApiResponse, VehicleStatus, VehicleTelemetry } from "../types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ActivityEvent, GeoPoint, VehicleApiResponse, VehicleStatus, VehicleTelemetry } from "../types";
 import { apiUrl } from "../utils/api";
-import { bearingDeg, corridorFor, distanceKm, etaMinutes, EVENT_CENTER, isInsideEventGeofence } from "../utils/geo";
+import { bearingDeg, corridorFor, distanceKm, etaMinutes, EVENT_CENTER, EVENT_POLYGON, isInsideEventGeofence } from "../utils/geo";
 import { statusLabel } from "../utils/labels";
 
 export function useToyotaRadar() {
@@ -11,6 +11,32 @@ export function useToyotaRadar() {
   const [source, setSource] = useState<VehicleApiResponse["source"]>("database");
   const [loadingRealData, setLoadingRealData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [eventPolygon, setEventPolygon] = useState<GeoPoint[]>(EVENT_POLYGON);
+  const eventPolygonRef = useRef<GeoPoint[]>(EVENT_POLYGON);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadEventGeofence = async () => {
+      try {
+        const response = await fetch(apiUrl("/api/geofence/event"));
+        const data = (await response.json()) as { points?: GeoPoint[] };
+        if (!cancelled && response.ok && Array.isArray(data.points) && data.points.length >= 3) {
+          eventPolygonRef.current = data.points;
+          setEventPolygon(data.points);
+        }
+      } catch {
+        // El poligono exacto incluido en la aplicacion permanece como respaldo.
+      }
+    };
+
+    loadEventGeofence();
+    const timer = window.setInterval(loadEventGeofence, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -23,7 +49,7 @@ export function useToyotaRadar() {
         setSource(data.source);
         setLastUpdate(new Date());
         setVehicles((current) => {
-          const merged = mergeRealVehicles(current, data.vehicles || []);
+          const merged = mergeRealVehicles(current, data.vehicles || [], eventPolygonRef.current);
           setEvents(buildLiveEvents(merged));
           return merged;
         });
@@ -58,10 +84,10 @@ export function useToyotaRadar() {
     };
   }, [vehicles]);
 
-  return { vehicles, events, stats, lastUpdate, source, loadingRealData, error };
+  return { vehicles, events, stats, lastUpdate, source, loadingRealData, error, eventPolygon };
 }
 
-function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<VehicleTelemetry>[]) {
+function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<VehicleTelemetry>[], eventPolygon: GeoPoint[]) {
   const byId = new Map(current.map((vehicle) => [vehicle.deviceId || vehicle.id, vehicle]));
 
   return incoming
@@ -73,7 +99,7 @@ function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<Vehicl
       const distanceToEvent = distanceKm(point, EVENT_CENTER);
       const speed = Number(vehicle.speed || 0);
       const timestamp = Number(vehicle.timestamp || Date.now());
-      const status = normalizeStatus(vehicle.status, point, distanceToEvent, speed, timestamp);
+      const status = normalizeStatus(vehicle.status, point, eventPolygon, distanceToEvent, speed, timestamp);
       const plate = safeDisplayPlate(String(vehicle.plate || ""));
       const model = safeDisplayModel(String(vehicle.model || "Toyota"), plate);
       const trail = previous ? [...previous.trail, point].slice(-32) : [point];
@@ -156,9 +182,9 @@ async function fetchVehicles(url: string, timeoutMs: number, fallbackSource?: Ve
   }
 }
 
-function normalizeStatus(status: VehicleStatus | undefined, point: { lat: number; lng: number }, distanceToEvent: number, speed: number, timestamp: number): VehicleStatus {
+function normalizeStatus(status: VehicleStatus | undefined, point: GeoPoint, eventPolygon: GeoPoint[], distanceToEvent: number, speed: number, timestamp: number): VehicleStatus {
   if (Date.now() - timestamp > 1000 * 60 * 5 || status === "OFFLINE") return "OFFLINE";
-  if (isInsideEventGeofence(point)) return "AT_EVENT";
+  if (isInsideEventGeofence(point, eventPolygon)) return "AT_EVENT";
   if (distanceToEvent < 1.2) return "ARRIVING";
   if (distanceToEvent < 10 && speed > 3) return "APPROACHING";
   if (speed < 2) return "STOPPED";

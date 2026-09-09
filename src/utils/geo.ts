@@ -5,32 +5,14 @@ export const EVENT_CENTER: GeoPoint = {
   lng: -78.4483948182255,
 };
 
-// Perimetro operativo trazado sobre el recinto indicado, sin incluir las vias,
-// el rio ni los sectores residenciales colindantes.
+// Respaldo exacto de la geocerca 982 de Traccar.
 export const EVENT_POLYGON: GeoPoint[] = [
-  { lat: -0.02072542, lng: -78.449665185 },
-  { lat: -0.020715677, lng: -78.449172655 },
-  { lat: -0.020686448, lng: -78.448662106 },
-  { lat: -0.020715677, lng: -78.448241653 },
-  { lat: -0.020793622, lng: -78.447971362 },
-  { lat: -0.020998228, lng: -78.447731104 },
-  { lat: -0.021154118, lng: -78.447520878 },
-  { lat: -0.02122232, lng: -78.447328671 },
-  { lat: -0.02137821, lng: -78.447226561 },
-  { lat: -0.021631532, lng: -78.447220554 },
-  { lat: -0.021836137, lng: -78.447292632 },
-  { lat: -0.021953055, lng: -78.447430781 },
-  { lat: -0.022011514, lng: -78.447671039 },
-  { lat: -0.022079716, lng: -78.448169576 },
-  { lat: -0.022138175, lng: -78.448421847 },
-  { lat: -0.022079716, lng: -78.448692138 },
-  { lat: -0.022001771, lng: -78.44923272 },
-  { lat: -0.022040743, lng: -78.449442946 },
-  { lat: -0.022157661, lng: -78.449611127 },
-  { lat: -0.021836137, lng: -78.449593108 },
-  { lat: -0.021504871, lng: -78.449617134 },
-  { lat: -0.021232063, lng: -78.449593108 },
-  { lat: -0.020968998, lng: -78.449647166 },
+  { lat: -0.020209702295415, lng: -78.451972885051 },
+  { lat: -0.022763165097831, lng: -78.451844139019 },
+  { lat: -0.02284899577951, lng: -78.44623295776 },
+  { lat: -0.021121653301151, lng: -78.445321006694 },
+  { lat: -0.020435007838491, lng: -78.447241468349 },
+  { lat: -0.020198973460024, lng: -78.44775645248 },
 ];
 
 export const MAP_BOUNDS = {
@@ -53,12 +35,12 @@ export function distanceKm(a: GeoPoint, b: GeoPoint) {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
-export function isInsideEventGeofence(point: GeoPoint) {
+export function isInsideEventGeofence(point: GeoPoint, polygon = EVENT_POLYGON) {
   let inside = false;
 
-  for (let current = 0, previous = EVENT_POLYGON.length - 1; current < EVENT_POLYGON.length; previous = current, current += 1) {
-    const a = EVENT_POLYGON[current];
-    const b = EVENT_POLYGON[previous];
+  for (let current = 0, previous = polygon.length - 1; current < polygon.length; previous = current, current += 1) {
+    const a = polygon[current];
+    const b = polygon[previous];
     const crossesLatitude = a.lat > point.lat !== b.lat > point.lat;
     const boundaryLng = ((b.lng - a.lng) * (point.lat - a.lat)) / (b.lat - a.lat || Number.EPSILON) + a.lng;
 

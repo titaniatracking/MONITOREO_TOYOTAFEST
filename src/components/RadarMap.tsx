@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, PointerEvent } from "react";
 import { LocateFixed, Minus, Plus } from "lucide-react";
-import type { VehicleTelemetry } from "../types";
-import { boundsFromCenter, clamp, EVENT_CENTER, EVENT_POLYGON, getQuitoTiles, projectToMap, projectToMapRaw } from "../utils/geo";
+import type { GeoPoint, VehicleTelemetry } from "../types";
+import { boundsFromCenter, clamp, EVENT_CENTER, getQuitoTiles, projectToMap, projectToMapRaw } from "../utils/geo";
 import { corridorLabel, statusLabel } from "../utils/labels";
 
 interface RadarMapProps {
   vehicles: VehicleTelemetry[];
+  eventPolygon: GeoPoint[];
   selectedId?: string;
   radarMode: boolean;
   cinematicMode: boolean;
@@ -23,18 +24,13 @@ const MIN_MAP_ZOOM = 11;
 const MAX_MAP_ZOOM = 20;
 const EVENT_FOCUS_ZOOM = 18;
 const SELECTED_FOCUS_ZOOM = 18;
-const EVENT_GEOFENCE_CENTER = {
-  lat: EVENT_POLYGON.reduce((total, point) => total + point.lat, 0) / EVENT_POLYGON.length,
-  lng: EVENT_POLYGON.reduce((total, point) => total + point.lng, 0) / EVENT_POLYGON.length,
-};
-
 interface DragState {
   x: number;
   y: number;
   center: typeof EVENT_CENTER;
 }
 
-export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showHeatmap, locatingVehicle, eventFocusKey, selectedFocusKey, onSelect }: RadarMapProps) {
+export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinematicMode, showHeatmap, locatingVehicle, eventFocusKey, selectedFocusKey, onSelect }: RadarMapProps) {
   const [mapZoom, setMapZoom] = useState(13);
   const [mapCenter, setMapCenter] = useState(EVENT_CENTER);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -43,7 +39,11 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
   const eventPoint = projectToMap(EVENT_CENTER, mapBounds);
   const selected = vehicles.find((vehicle) => vehicle.id === selectedId);
   const mapTiles = useMemo(() => getQuitoTiles(Math.round(mapZoom), mapBounds), [mapBounds, mapZoom]);
-  const geofencePoints = useMemo(() => EVENT_POLYGON.map((point) => projectToMap(point, mapBounds)), [mapBounds]);
+  const eventGeofenceCenter = useMemo(() => ({
+    lat: eventPolygon.reduce((total, point) => total + point.lat, 0) / eventPolygon.length,
+    lng: eventPolygon.reduce((total, point) => total + point.lng, 0) / eventPolygon.length,
+  }), [eventPolygon]);
+  const geofencePoints = useMemo(() => eventPolygon.map((point) => projectToMap(point, mapBounds)), [eventPolygon, mapBounds]);
   const geofenceLabel = useMemo(
     () => ({
       x: geofencePoints.reduce((total, point) => total + point.x, 0) / geofencePoints.length,
@@ -74,7 +74,7 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
 
   useEffect(() => {
     if (!eventFocusKey) return;
-    setMapCenter(EVENT_GEOFENCE_CENTER);
+    setMapCenter(eventGeofenceCenter);
     setMapZoom(EVENT_FOCUS_ZOOM);
   }, [eventFocusKey]);
 
@@ -208,7 +208,7 @@ export function RadarMap({ vehicles, selectedId, radarMode, cinematicMode, showH
       <div className="map-zoom-controls">
         <button onClick={() => setMapZoom((zoom) => Math.min(MAX_MAP_ZOOM, zoom + 1))} aria-label="Acercar mapa"><Plus size={16} /></button>
         <button onClick={() => setMapZoom((zoom) => Math.max(MIN_MAP_ZOOM, zoom - 1))} aria-label="Alejar mapa"><Minus size={16} /></button>
-        <button onClick={() => { setMapCenter(EVENT_GEOFENCE_CENTER); setMapZoom(EVENT_FOCUS_ZOOM); }} aria-label="Ir a geocerca"><LocateFixed size={16} /></button>
+        <button onClick={() => { setMapCenter(eventGeofenceCenter); setMapZoom(EVENT_FOCUS_ZOOM); }} aria-label="Ir a geocerca"><LocateFixed size={16} /></button>
         <span>Z{mapZoom}</span>
       </div>
       {locatingVehicle && (
