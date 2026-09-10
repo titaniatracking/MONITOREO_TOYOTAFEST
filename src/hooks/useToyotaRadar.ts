@@ -49,7 +49,10 @@ export function useToyotaRadar() {
         setSource(data.source);
         setLastUpdate(new Date());
         setVehicles((current) => {
-          const merged = mergeRealVehicles(current, data.vehicles || [], eventPolygonRef.current);
+          const incoming = data.vehicles || [];
+          if (!incoming.length && current.length) return current;
+
+          const merged = mergeRealVehicles(current, incoming, eventPolygonRef.current);
           setEvents(buildLiveEvents(merged));
           return merged;
         });

@@ -320,7 +320,7 @@ function MapPanel(props: {
         </div>
       </div>
       <RadarMap vehicles={props.vehicles} eventPolygon={props.eventPolygon} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
-      {!props.vehicles.length && <EmptyOverlay title={props.loading ? "Cargando vehiculos reales" : "Sin vehiculos reales"} text={props.loading ? "Consultando Flespi, Traccar y MySQL." : "No llegaron posiciones reales para este rango del mapa."} />}
+      {props.loading && !props.vehicles.length && <EmptyOverlay title="Cargando vehiculos reales" text="Consultando Flespi, Traccar y MySQL." />}
       <div className="map-legend">
         <span><i className="green" />En evento</span>
         <span><i className="blue" />En movimiento</span>
