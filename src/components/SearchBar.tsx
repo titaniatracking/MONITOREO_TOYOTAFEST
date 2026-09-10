@@ -16,7 +16,7 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
   const [deferredQuery, setDeferredQuery] = useState(query);
   const [baseRecords, setBaseRecords] = useState<VehicleSearchRecord[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
-  const [searchRequestKey, setSearchRequestKey] = useState(0);
+  const [searchRequest, setSearchRequest] = useState({ term: "", key: 0 });
   const indexedVehicles = useMemo(
     () => vehicles.map((vehicle) => ({ vehicle, searchText: vehicleSearchText(vehicle) })),
     [vehicles]
@@ -24,36 +24,40 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDeferredQuery(query), 180);
+    setBaseRecords([]);
+    setAnalyzing(false);
     return () => window.clearTimeout(timer);
   }, [query]);
 
   useEffect(() => {
-    const search = normalize(deferredQuery);
-    if (search.length < 2) {
-      setBaseRecords([]);
-      setAnalyzing(false);
-      return;
-    }
+    const search = normalize(searchRequest.term);
+    if (!searchRequest.key || search.length < 2) return;
 
     const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
+    const runSearch = async () => {
       try {
         setAnalyzing(true);
-        const response = await fetch(apiUrl(`/api/vehicles/search?q=${encodeURIComponent(deferredQuery)}`), { signal: controller.signal });
+        const response = await fetch(apiUrl(`/api/vehicles/search?q=${encodeURIComponent(searchRequest.term)}`), { signal: controller.signal });
         const data = (await response.json()) as { records?: VehicleSearchRecord[] };
         setBaseRecords(data.records ?? []);
       } catch {
-        setBaseRecords([]);
+        if (!controller.signal.aborted) setBaseRecords([]);
       } finally {
-        window.setTimeout(() => setAnalyzing(false), 480);
+        if (!controller.signal.aborted) window.setTimeout(() => setAnalyzing(false), 480);
       }
-    }, searchRequestKey ? 0 : 220);
+    };
+    runSearch();
 
     return () => {
       controller.abort();
-      window.clearTimeout(timer);
     };
-  }, [deferredQuery, searchRequestKey]);
+  }, [searchRequest]);
+
+  const submitSearch = () => {
+    const term = query.trim();
+    setDeferredQuery(term);
+    setSearchRequest((current) => ({ term, key: current.key + 1 }));
+  };
 
   const searchTerm = normalize(deferredQuery);
   const results = useMemo(() => {
@@ -76,14 +80,11 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
           value={query}
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              setDeferredQuery(query);
-              setSearchRequestKey((value) => value + 1);
-            }
+            if (event.key === "Enter") submitSearch();
           }}
           placeholder="Buscar placa, nombre, cedula, chasis o dispositivo..."
         />
-        <button onClick={() => { setDeferredQuery(query); setSearchRequestKey((value) => value + 1); }}>Buscar</button>
+        <button onClick={submitSearch}>Buscar</button>
       </div>
       {analyzing && (
         <div className="search-analyzer">
@@ -144,6 +145,7 @@ function vehicleSearchText(vehicle: VehicleTelemetry) {
     vehicle.color,
     vehicle.engine,
     vehicle.status,
+    ...(vehicle.lookupIds ?? []),
   ].filter(Boolean).join(" "));
 }
 

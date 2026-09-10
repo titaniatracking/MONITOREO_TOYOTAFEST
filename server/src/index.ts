@@ -64,9 +64,8 @@ app.get("/api/vehicles/live", async (_request, response, next) => {
       try {
         const vehicles = await withTimeout(traccar.getLiveVehicles(), 10000, "Traccar timeout");
         if (vehicles.length) {
-          const enriched = await enrichWithVapor(vehicles);
-          persistPositions(enriched);
-          return response.json({ source: "traccar", vehicles: enriched });
+          persistPositions(vehicles);
+          return response.json({ source: "traccar", vehicles });
         }
       } catch (error) {
         console.warn(error instanceof Error ? error.message : "Traccar unavailable");
@@ -77,16 +76,15 @@ app.get("/api/vehicles/live", async (_request, response, next) => {
       try {
         const vehicles = await withTimeout(flespi.getLiveVehicles(), 7000, "Flespi timeout");
         if (vehicles.length) {
-          const enriched = await enrichWithVapor(vehicles);
-          persistPositions(enriched);
-          return response.json({ source: "flespi", vehicles: enriched });
+          persistPositions(vehicles);
+          return response.json({ source: "flespi", vehicles });
         }
       } catch (error) {
         console.warn(error instanceof Error ? error.message : "Flespi unavailable");
       }
     }
 
-    const vehicles = await enrichWithVapor(await latestVehicles());
+    const vehicles = await latestVehicles();
     return response.json({ source: "database", vehicles });
   } catch (error) {
     next(error);

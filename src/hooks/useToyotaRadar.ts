@@ -110,6 +110,7 @@ function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<Vehicl
       return {
         id,
         deviceId: String(vehicle.deviceId || id),
+        lookupIds: vehicle.lookupIds,
         plate,
         model,
         owner: String(vehicle.owner || "Dato real"),

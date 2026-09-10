@@ -21,7 +21,7 @@ interface RadarMapProps {
 const rings = [1, 2, 5, 10];
 const PAN_LIMIT = { lat: 0.18, lng: 0.22 };
 const MIN_MAP_ZOOM = 11;
-const MAX_MAP_ZOOM = 20;
+const MAX_MAP_ZOOM = 19;
 const EVENT_FOCUS_ZOOM = 18;
 const SELECTED_FOCUS_ZOOM = 18;
 interface DragState {

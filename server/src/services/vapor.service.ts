@@ -132,7 +132,7 @@ export class VaporService {
 
     const customers = await this.lookupCustomers(enriched).catch(() => new Map<string, VaporCustomer>());
     return enriched.map((vehicle) => {
-      const customer = customers.get(vehicle.chassis || "") ?? customers.get(normalizePlate(vehicle.plate));
+      const customer = customers.get(normalizePlate(vehicle.chassis)) ?? customers.get(normalizePlate(vehicle.plate));
       return sanitizeVehicle({
         ...vehicle,
         owner: customer?.customer || vehicle.owner,
@@ -448,7 +448,7 @@ export class VaporService {
     const keys = Array.from(
       new Set(
         vehicles
-          .flatMap((vehicle) => [vehicle.chassis, normalizePlate(vehicle.plate)])
+          .flatMap((vehicle) => [normalizePlate(vehicle.chassis), normalizePlate(vehicle.plate)])
           .filter((value): value is string => Boolean(value && value !== "SIN PLACA"))
       )
     );
@@ -469,7 +469,8 @@ export class VaporService {
          cliente customer,
          ruc_cliente document
        FROM facturas_documentos
-       WHERE placa IN (${placeholders}) OR chasis IN (${placeholders})
+       WHERE REPLACE(UPPER(COALESCE(placa, '')), ' ', '') IN (${placeholders})
+          OR REPLACE(UPPER(COALESCE(chasis, '')), ' ', '') IN (${placeholders})
        ORDER BY fecha_emision DESC, id DESC
        LIMIT 800`,
       [...missing, ...missing]
@@ -478,7 +479,7 @@ export class VaporService {
     for (const row of rows) {
       const customer = row as VaporCustomer;
       const plateKey = normalizePlate(customer.plate);
-      const chassisKey = customer.chassis;
+      const chassisKey = normalizePlate(customer.chassis);
       if (plateKey && !output.has(plateKey)) {
         this.writeCache(this.customerCache, plateKey, customer);
         output.set(plateKey, customer);

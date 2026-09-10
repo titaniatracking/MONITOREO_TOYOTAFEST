@@ -18,6 +18,7 @@ export interface VehicleTelemetry extends GeoPoint {
   id: string;
   plate: string;
   deviceId: string;
+  lookupIds?: string[];
   model: string;
   owner: string;
   document?: string;

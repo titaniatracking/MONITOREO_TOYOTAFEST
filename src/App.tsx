@@ -35,6 +35,7 @@ import { statusLabel } from "./utils/labels";
 type ViewKey = "summary" | "map" | "search" | "routes" | "reports" | "settings";
 
 const TOYOTA_LOGO_URL = "/experiencefest/experience-fest-alt-Suxh23_l.png";
+const vehicleDetailCache = new Map<string, VehicleSearchRecord>();
 
 const menuItems: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
   { key: "summary", label: "Resumen", icon: <Home size={17} /> },
@@ -117,12 +118,19 @@ export function App() {
     setFilter((current) => (current === status ? "ALL" : status));
   };
 
-  const selectVehicle = (vehicle: VehicleTelemetry) => {
-    setLocatingVehicle(false);
-    setSelected(vehicle);
+  const selectVehicle = async (vehicle: VehicleTelemetry) => {
+    setLocatingVehicle(true);
+    setSelected((current) => current && isLiveVehicle(current) && sameVehicle(current, vehicle) ? mergeSelectedWithFreshPosition(current, vehicle) : vehicle);
     setFilter("ALL");
     setFollow(false);
     setSelectedFocusKey((value) => value + 1);
+
+    try {
+      const enriched = await enrichSelectedVehicle(vehicle);
+      if (enriched) setSelected(mergeLiveWithRecord(vehicle, enriched));
+    } finally {
+      window.setTimeout(() => setLocatingVehicle(false), 350);
+    }
   };
 
   const openVehicleSummary = async (vehicle: VehicleTelemetry) => {
@@ -146,7 +154,7 @@ export function App() {
     setLocatingVehicle(true);
     const recordKeys = [record.plate, record.chassis, record.imei, record.deviceId].filter(Boolean).map((item) => normalizeKey(String(item)));
     const live = vehicles.find((vehicle) =>
-      [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId]
+      [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId, ...(vehicle.lookupIds ?? [])]
         .filter(Boolean)
         .some((item) => recordKeys.includes(normalizeKey(String(item))))
     );
@@ -234,8 +242,8 @@ export function App() {
               <div className="side-stack">
                 <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
                 <section className="panel vehicle-card">
-                  {selected || vehicles[0] ? (
-                    <VehiclePanel vehicle={selected ?? vehicles[0]} follow={follow} onClose={() => setSelected(null)} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={() => setEventFocusKey((value) => value + 1)} />
+                  {selected ? (
+                    <VehiclePanel vehicle={selected} follow={follow} onClose={() => setSelected(null)} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={() => setEventFocusKey((value) => value + 1)} />
                   ) : (
                     <EmptyState title="Sin vehiculo seleccionado" text="Cuando lleguen datos reales desde Flespi o MySQL, selecciona un vehiculo para ver su telemetria." />
                   )}
@@ -330,6 +338,10 @@ function MapPanel(props: {
   onEventFocus: () => void;
   large?: boolean;
 }) {
+  const radarVehicles = props.selected
+    ? props.vehicles.map((vehicle) => sameVehicle(props.selected as VehicleTelemetry, vehicle) ? mergeSelectedWithFreshPosition(props.selected as VehicleTelemetry, vehicle) : vehicle)
+    : props.vehicles;
+
   return (
     <section className={`panel map-card ${props.large ? "large-map-card" : ""}`}>
       <div className="map-panel-head">
@@ -342,7 +354,7 @@ function MapPanel(props: {
           <button className="event-jump" onClick={props.onEventFocus}>Ir a evento</button>
         </div>
       </div>
-      <RadarMap vehicles={props.vehicles} eventPolygon={props.eventPolygon} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
+      <RadarMap vehicles={radarVehicles} eventPolygon={props.eventPolygon} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
       {props.loading && !props.vehicles.length && <EmptyOverlay title="Cargando vehiculos reales" text="Consultando Flespi, Traccar y MySQL." />}
       <div className="map-legend">
         <span><i className="green" />En evento</span>
@@ -595,8 +607,10 @@ function mergeLiveWithRecord(live: VehicleTelemetry, record: VehicleSearchRecord
 }
 
 async function enrichSelectedVehicle(vehicle: VehicleTelemetry): Promise<VehicleSearchRecord | null> {
-  const terms = [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId]
+  const terms = [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId, ...(vehicle.lookupIds ?? [])]
     .filter((term): term is string => Boolean(term && String(term).trim() && String(term).trim().toUpperCase() !== "SIN PLACA"));
+  const cached = terms.map((term) => vehicleDetailCache.get(normalizeKey(term))).find(Boolean);
+  if (cached) return cached;
 
   for (const term of terms) {
     try {
@@ -604,7 +618,12 @@ async function enrichSelectedVehicle(vehicle: VehicleTelemetry): Promise<Vehicle
       const data = (await response.json()) as { records?: VehicleSearchRecord[] };
       const records = data.records ?? [];
       const exact = records.find((record) => sameVehicle(record, vehicle)) ?? records[0];
-      if (exact) return exact;
+      if (exact) {
+        [exact.plate, exact.chassis, exact.imei, exact.deviceId, ...terms]
+          .filter((key): key is string => Boolean(key))
+          .forEach((key) => vehicleDetailCache.set(normalizeKey(key), exact));
+        return exact;
+      }
     } catch {
       continue;
     }
@@ -637,6 +656,7 @@ function completeLocatedVehicle(vehicle: Partial<VehicleTelemetry>): VehicleTele
   return {
     id: String(vehicle.id || vehicle.deviceId || vehicle.imei || vehicle.plate || "vehiculo-localizado"),
     deviceId: String(vehicle.deviceId || vehicle.imei || vehicle.id || ""),
+    lookupIds: vehicle.lookupIds,
     plate: String(vehicle.plate || "SIN PLACA"),
     model: String(vehicle.model || "Vehiculo"),
     owner: String(vehicle.owner || "Dato real"),
@@ -682,7 +702,7 @@ function completeLocatedVehicle(vehicle: Partial<VehicleTelemetry>): VehicleTele
 
 function sameVehicle(record: VehicleSearchRecord, vehicle: VehicleTelemetry) {
   const recordKeys = [record.plate, record.chassis, record.imei, record.deviceId].filter(Boolean).map((item) => normalizeKey(String(item)));
-  return [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId]
+  return [vehicle.plate, vehicle.chassis, vehicle.imei, vehicle.deviceId, ...(vehicle.lookupIds ?? [])]
     .filter(Boolean)
     .some((item) => recordKeys.includes(normalizeKey(String(item))));
 }
@@ -694,7 +714,15 @@ function keepDetail<T>(selectedValue: T | undefined, freshValue: T | undefined) 
 function hasUsefulValue(value: unknown) {
   if (value === undefined || value === null) return false;
   const text = String(value).trim().toUpperCase();
-  return Boolean(text && text !== "PENDIENTE" && text !== "DATO REAL" && text !== "DATO VAPOR PENDIENTE");
+  return Boolean(
+    text &&
+    text !== "PENDIENTE" &&
+    text !== "CLIENTE PENDIENTE" &&
+    text !== "CLIENTE PENDIENTE EN BASE" &&
+    text !== "DATO REAL" &&
+    text !== "DATO VAPOR PENDIENTE" &&
+    text !== "SIN PLACA"
+  );
 }
 
 function normalizeKey(value: string) {
