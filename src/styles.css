@@ -43,6 +43,7 @@ body {
     linear-gradient(180deg, rgba(5, 7, 10, 0.8), rgba(5, 7, 10, 0.93)),
     url("/experiencefest/event-watermark-bg.jpg") center / cover fixed no-repeat,
     #05070a;
+  cursor: url("/experiencefest/cursor-tech.svg") 3 3, default;
 }
 button, input { font: inherit; }
 button { cursor: pointer; }
@@ -167,8 +168,10 @@ button { cursor: pointer; }
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px 0 0 8px;
   background:
-    linear-gradient(180deg, rgba(23, 28, 36, 0.88), rgba(5, 7, 10, 0.96)),
-    linear-gradient(90deg, rgba(235, 10, 30, 0.18), transparent 46%);
+    linear-gradient(180deg, rgba(12, 16, 23, 0.78), rgba(5, 7, 10, 0.97) 58%),
+    linear-gradient(90deg, rgba(235, 10, 30, 0.2), transparent 52%),
+    url("/experiencefest/event-header-bg.jpg") 62% top / auto 430px no-repeat,
+    #080b10;
   box-shadow: 18px 0 55px rgba(0, 0, 0, 0.32), inset -1px 0 0 rgba(235, 10, 30, 0.16);
   backdrop-filter: blur(20px);
   overflow: hidden;
@@ -263,10 +266,28 @@ button { cursor: pointer; }
   box-shadow: 0 0 18px rgba(235, 10, 30, 0.82);
 }
 
+.sidebar button::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  right: auto;
+  bottom: 5px;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #eb0a1e, #7bd7ff, transparent);
+  box-shadow: 0 0 10px rgba(123, 215, 255, 0.46);
+  transition: width 220ms ease;
+}
+
 .sidebar button:hover {
   color: #fff;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), transparent);
   transform: translateX(3px);
+}
+
+.sidebar button:hover::after,
+.sidebar button.active::after {
+  width: calc(100% - 44px);
 }
 
 .sidebar button:hover svg,
@@ -282,6 +303,10 @@ button { cursor: pointer; }
   background:
     linear-gradient(90deg, rgba(235, 10, 30, 0.86), rgba(235, 10, 30, 0.24) 58%, transparent),
     linear-gradient(90deg, rgba(255, 255, 255, 0.07), transparent);
+}
+
+.sidebar button.active svg {
+  animation: navIconPulse 2.4s ease-in-out infinite;
 }
 
 .sidebar button.active::before {
@@ -351,11 +376,35 @@ button { cursor: pointer; }
 }
 
 .dashboard-header {
+  position: relative;
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 16px;
+  min-height: 78px;
+  padding: 14px 18px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(235, 10, 30, 0.38);
+  background:
+    linear-gradient(90deg, rgba(7, 10, 15, 0.97) 0 34%, rgba(7, 10, 15, 0.74) 62%, rgba(7, 10, 15, 0.46)),
+    url("/experiencefest/event-header-bg.jpg") center 58% / cover no-repeat;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
 }
+
+.dashboard-header::after {
+  content: "";
+  position: absolute;
+  left: -34%;
+  bottom: 0;
+  width: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #eb0a1e, #7bd7ff, transparent);
+  box-shadow: 0 0 13px rgba(235, 10, 30, 0.72);
+  animation: headerScan 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.dashboard-header > * { position: relative; z-index: 1; }
 
 .dashboard-header h1 { margin: 0; font-size: 27px; line-height: 1; font-weight: 900; }
 .dashboard-header h1 span { color: #eb0a1e; }
@@ -1971,6 +2020,9 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
 @keyframes dataPulse { 50% { opacity: 0.42; transform: scale(0.9); } }
 @keyframes corePulse { 50% { transform: scale(1.35); opacity: 0.55; } }
 @keyframes locateScanLine { 0% { transform: translateY(-72px); opacity: 0; } 22%, 78% { opacity: 0.9; } 100% { transform: translateY(72px); opacity: 0; } }
+@keyframes headerScan { 0%, 12% { transform: translateX(0); opacity: 0; } 24% { opacity: 1; } 74%, 100% { transform: translateX(450%); opacity: 0; } }
+@keyframes navIconPulse { 50% { border-color: rgba(123, 215, 255, 0.72); box-shadow: 0 0 25px rgba(235, 10, 30, 0.3); } }
+@keyframes menuBeacon { 50% { border-color: rgba(235, 10, 30, 0.72); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42), 0 0 26px rgba(235, 10, 30, 0.34); } }
 
 @media (max-width: 1180px) {
   .system-dashboard { grid-template-columns: 80px 1fr; }
@@ -2018,7 +2070,10 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
     border: 0;
     border-right: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 0 8px 8px 0;
-    background: rgba(8, 11, 16, 0.96);
+    background:
+      linear-gradient(180deg, rgba(8, 11, 16, 0.76), rgba(8, 11, 16, 0.98) 52%),
+      url("/experiencefest/event-header-bg.jpg") 62% top / auto 430px no-repeat,
+      #080b10;
     box-shadow: 18px 0 42px rgba(0, 0, 0, 0.54);
     backdrop-filter: blur(18px);
     visibility: hidden;
@@ -2050,6 +2105,7 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
     background: rgba(8, 11, 16, 0.92);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42), 0 0 18px rgba(235, 10, 30, 0.2);
     backdrop-filter: blur(16px);
+    animation: menuBeacon 2.8s ease-in-out infinite;
   }
 
   .mobile-menu-backdrop {
@@ -2213,4 +2269,14 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .filters { gap: 5px; }
   .filters button { padding: 7px; font-size: 9px; }
   .telemetry-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-dashboard::before,
+  .system-dashboard::after,
+  .dashboard-header::after,
+  .sidebar button.active svg,
+  .mobile-menu-toggle {
+    animation: none;
+  }
 }
