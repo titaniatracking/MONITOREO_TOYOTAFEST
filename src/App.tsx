@@ -7,6 +7,7 @@ import {
   Gauge,
   Home,
   MapPinned,
+  Menu,
   Navigation,
   Route,
   Search,
@@ -15,6 +16,7 @@ import {
   Timer,
   TrendingUp,
   Wifi,
+  X,
 } from "lucide-react";
 import { ActivityFeed } from "./components/ActivityFeed";
 import { LoadingScreen } from "./components/LoadingScreen";
@@ -60,6 +62,7 @@ export function App() {
   const [selectedFocusKey, setSelectedFocusKey] = useState(0);
   const [isolateSelected, setIsolateSelected] = useState(false);
   const [locatingVehicle, setLocatingVehicle] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const hasSearchQuery = query.trim().length >= 2;
   const shouldShowOnlySelected = hasSearchQuery && isolateSelected && selected && isLiveVehicle(selected);
 
@@ -80,6 +83,15 @@ export function App() {
     if (hasSearchQuery) return;
     setIsolateSelected(false);
   }, [hasSearchQuery]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
 
   const visibleVehicles = useMemo(() => {
     return filter === "ALL" ? vehicles : vehicles.filter((vehicle) => vehicle.status === filter);
@@ -167,7 +179,18 @@ export function App() {
 
   return (
     <main className="system-dashboard">
-      <aside className="sidebar">
+      <button
+        className="mobile-menu-toggle"
+        type="button"
+        aria-label={mobileMenuOpen ? "Cerrar menu" : "Abrir menu"}
+        aria-expanded={mobileMenuOpen}
+        aria-controls="main-navigation"
+        onClick={() => setMobileMenuOpen((open) => !open)}
+      >
+        {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
+      {mobileMenuOpen && <button className="mobile-menu-backdrop" type="button" aria-label="Cerrar menu" onClick={() => setMobileMenuOpen(false)} />}
+      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="toyota-mark">
           <img src={TOYOTA_LOGO_URL} alt="Toyota" />
           <div>
@@ -175,9 +198,9 @@ export function App() {
             <span>Experience Fest</span>
           </div>
         </div>
-        <nav>
+        <nav id="main-navigation">
           {menuItems.map((item) => (
-            <button key={item.key} className={activeView === item.key ? "active" : ""} onClick={() => setActiveView(item.key)}>
+            <button key={item.key} className={activeView === item.key ? "active" : ""} onClick={() => { setActiveView(item.key); setMobileMenuOpen(false); }}>
               {item.icon}
               {item.label}
             </button>
