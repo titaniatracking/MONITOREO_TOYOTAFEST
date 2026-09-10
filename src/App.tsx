@@ -277,7 +277,7 @@ function SummaryRow({
   return (
     <section className="summary-row">
       <SummaryCard icon={<CheckCircle2 size={26} />} label="En evento" value={stats.atEvent} hint={`${totalVehicles} vehiculos monitoreados`} tone="green" active={activeFilter === "AT_EVENT"} onClick={() => onFilter("AT_EVENT")} />
-      <SummaryCard icon={<TrendingUp size={26} />} label="Ingresando" value={stats.arriving} hint="Entrando a la geocerca" tone="yellow" active={activeFilter === "ARRIVING"} onClick={() => onFilter("ARRIVING")} />
+      <SummaryCard icon={<TrendingUp size={26} />} label="Ingresando" value={stats.arriving} hint="Entrando a la geocerca" tone="purple" active={activeFilter === "ARRIVING"} onClick={() => onFilter("ARRIVING")} />
       <SummaryCard icon={<Navigation size={26} />} label="Vehiculos acercandose" value={stats.approaching} hint="Proximos a la geocerca" tone="blue" active={activeFilter === "APPROACHING"} onClick={() => onFilter("APPROACHING")} />
     </section>
   );
@@ -324,7 +324,7 @@ function MapPanel(props: {
       <div className="map-legend">
         <span><i className="green" />En evento</span>
         <span><i className="blue" />En movimiento</span>
-        <span><i className="yellow" />Ingresando</span>
+        <span><i className="purple" />Ingresando</span>
         <span><i className="orange" />Saliendo</span>
         <span><i className="gray" />Sin senal</span>
       </div>
@@ -344,7 +344,7 @@ function MapIndicators({
   const indicators = [
     { label: "En evento", value: stats.atEvent, tone: "green", status: "AT_EVENT" },
     { label: "En movimiento", value: stats.moving, tone: "blue", status: "MOVING" },
-    { label: "Ingresando", value: stats.arriving, tone: "yellow", status: "ARRIVING" },
+    { label: "Ingresando", value: stats.arriving, tone: "purple", status: "ARRIVING" },
     { label: "Saliendo", value: stats.departing, tone: "orange", status: "DEPARTING" },
   ];
 
@@ -420,7 +420,7 @@ function ReportsPanel({ stats, vehicles, source, lastUpdate }: { stats: ReturnTy
       <div className="report-grid">
         <SummaryCard icon={<Car size={24} />} label="Total vehiculos" value={vehicles.length} hint={`Origen: ${source}`} tone="red" />
         <SummaryCard icon={<MapPinned size={24} />} label="En evento" value={stats.atEvent} hint="Dentro de geocerca" tone="green" />
-        <SummaryCard icon={<TrendingUp size={24} />} label="Ingresando" value={stats.arriving} hint="Entrando a geocerca" tone="yellow" />
+        <SummaryCard icon={<TrendingUp size={24} />} label="Ingresando" value={stats.arriving} hint="Entrando a geocerca" tone="purple" />
         <SummaryCard icon={<Timer size={24} />} label="Ultima actualizacion" value={lastUpdate.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })} hint="Backend real" tone="purple" />
       </div>
     </section>

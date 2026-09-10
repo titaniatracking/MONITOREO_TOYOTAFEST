@@ -654,6 +654,7 @@ button.summary-card {
 .map-indicator.green { --indicator-color: #20c875; }
 .map-indicator.blue { --indicator-color: #3288ff; }
 .map-indicator.yellow { --indicator-color: #ffb020; }
+.map-indicator.purple { --indicator-color: #a855f7; }
 .map-indicator.orange { --indicator-color: #ff7a18; }
 
 .map-card .radar-map {
@@ -1098,7 +1099,7 @@ button.summary-card {
 }
 
 .status-approaching { color: #ffb020; stroke: #ffb020; }
-.status-arriving { color: #ffd35c; stroke: #ffd35c; }
+.status-arriving { color: #a855f7; stroke: #a855f7; }
 .status-at_event { color: #20c875; stroke: #20c875; }
 .status-moving { color: #3288ff; stroke: #3288ff; }
 .status-stopped { color: #62c7ff; stroke: #62c7ff; }
@@ -1175,6 +1176,7 @@ button.summary-card {
 .map-legend .green { background: #20c875; }
 .map-legend .blue { background: #3288ff; }
 .map-legend .yellow { background: #ffb020; }
+.map-legend .purple { background: #a855f7; box-shadow: 0 0 9px rgba(168, 85, 247, 0.82); }
 .map-legend .orange { background: #ff7a18; }
 .map-legend .gray { background: #68717d; }
 
