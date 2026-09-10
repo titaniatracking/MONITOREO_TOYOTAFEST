@@ -93,7 +93,7 @@ export function useToyotaRadar() {
 function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<VehicleTelemetry>[], eventPolygon: GeoPoint[]) {
   const byId = new Map(current.map((vehicle) => [vehicle.deviceId || vehicle.id, vehicle]));
 
-  return incoming
+  const merged = incoming
     .filter((vehicle) => Number.isFinite(Number(vehicle.lat)) && Number.isFinite(Number(vehicle.lng)))
     .map((vehicle, index) => {
       const id = vehicle.deviceId || vehicle.id || `vehiculo-real-${index}`;
@@ -143,6 +143,13 @@ function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<Vehicl
         lastEvent: statusLabel(status),
       };
     });
+
+  const refreshedIds = new Set(merged.map((vehicle) => vehicle.deviceId || vehicle.id));
+  const retainedAtEvent = current.filter(
+    (vehicle) => vehicle.status === "AT_EVENT" && !refreshedIds.has(vehicle.deviceId || vehicle.id)
+  );
+
+  return [...merged, ...retainedAtEvent];
 }
 
 function safeDisplayPlate(value: string) {
