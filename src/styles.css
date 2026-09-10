@@ -413,9 +413,18 @@ button { cursor: pointer; }
 .header-meta { display: flex; gap: 14px; padding-top: 7px; white-space: nowrap; }
 
 .summary-row {
+  position: sticky;
+  top: 0;
+  z-index: 120;
   display: grid;
   grid-template-columns: repeat(3, minmax(170px, 1fr));
   gap: 14px;
+  margin: -6px;
+  padding: 6px;
+  border-bottom: 1px solid rgba(235, 10, 30, 0.2);
+  background: rgba(8, 11, 16, 0.9);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px);
 }
 
 .summary-card,
@@ -2171,18 +2180,24 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .dashboard-header { display: grid; padding-right: 52px; }
   .dashboard-header h1 { font-size: 22px; line-height: 1.08; }
   .header-meta { flex-wrap: wrap; white-space: normal; }
-  .summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .summary-card {
-    grid-template-columns: 42px minmax(0, 1fr);
-    grid-template-rows: 18px 27px 16px;
-    min-height: 82px;
-    padding: 10px;
+  .summary-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-inline: -5px;
+    padding: 5px;
   }
-  .summary-card div { width: 34px; height: 34px; }
-  .summary-card div svg { width: 20px; height: 20px; }
-  .summary-card strong { font-size: 24px; }
+  .summary-card {
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: 17px 25px;
+    min-height: 58px;
+    padding: 7px;
+  }
+  .summary-card div { width: 26px; height: 26px; }
+  .summary-card div svg { width: 16px; height: 16px; }
+  .summary-card strong { font-size: 20px; }
   .summary-card span,
-  .summary-card small { font-size: 9px; }
+  .summary-card small { font-size: 8px; }
+  .summary-card small { display: none; }
 
   .content-grid > .map-card {
     height: auto;
@@ -2254,10 +2269,12 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .dashboard-main { padding-inline: 7px; }
   .dashboard-header h1 { font-size: 19px; }
   .dashboard-header p { font-size: 10px; }
-  .summary-row { grid-template-columns: minmax(0, 1fr); gap: 7px; }
-  .summary-card { grid-template-columns: 34px minmax(0, 1fr); padding: 8px; }
-  .summary-card div { width: 30px; height: 30px; }
-  .summary-card strong { font-size: 21px; }
+  .summary-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
+  .summary-card { grid-template-columns: 22px minmax(0, 1fr); padding: 5px; }
+  .summary-card div { width: 20px; height: 20px; }
+  .summary-card div svg { width: 13px; height: 13px; }
+  .summary-card strong { font-size: 18px; }
+  .summary-card span { font-size: 7px; overflow-wrap: anywhere; }
   .panel { padding: 10px; }
   .panel-title { font-size: 13px; }
   .map-legend { top: 108px; }
