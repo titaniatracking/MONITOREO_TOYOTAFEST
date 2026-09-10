@@ -1117,8 +1117,7 @@ button.summary-card {
 .vehicle-target em b { font-size: 10px; }
 .vehicle-target em small { color: #d8dde5; font-size: 9px; }
 
-.vehicle-target:hover em,
-.vehicle-target.selected em {
+.vehicle-target:hover em {
   opacity: 1;
   transform: translateX(0);
 }
@@ -1165,10 +1164,6 @@ button.summary-card {
 .status-at_event { color: #20c875; stroke: #20c875; }
 .vehicle-target.status-at_event { z-index: 12; }
 .vehicle-target.status-at_event .target-core { animation: none; }
-.vehicle-target.status-at_event em {
-  opacity: 1;
-  transform: translateX(0);
-}
 .status-moving { color: #3288ff; stroke: #3288ff; }
 .status-stopped { color: #62c7ff; stroke: #62c7ff; }
 .status-departing { color: #ff7a18; stroke: #ff7a18; }
