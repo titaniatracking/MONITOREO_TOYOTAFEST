@@ -272,7 +272,7 @@ export function App() {
               </div>
             </div>
             <section className="content-grid">
-              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={focusEvent} />
+              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} />
               {selected && (
                 <section className="panel vehicle-card">
                   <VehiclePanel vehicle={selected} follow={follow} onClose={clearVehicleSelection} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={focusEvent} />
@@ -289,7 +289,7 @@ export function App() {
 
         {activeView === "map" && (
           <section className="single-view">
-            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={focusEvent} large />
+            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} large />
           </section>
         )}
 
@@ -367,7 +367,6 @@ function MapPanel(props: {
   onCinematicMode: () => void;
   onHeatmap: () => void;
   onToggleIsolate: () => void;
-  onEventFocus: () => void;
   large?: boolean;
 }) {
   const hasSelectedVehicle = Boolean(
@@ -392,7 +391,6 @@ function MapPanel(props: {
           <button className={props.cinematicMode ? "active" : ""} onClick={props.onCinematicMode}>Modo cinematico</button>
           <button className={props.showHeatmap ? "active" : ""} onClick={props.onHeatmap}>Mapa de calor</button>
           <button className={props.isolateSelected ? "active" : ""} disabled={!props.selected || !props.canIsolateSelected} onClick={props.onToggleIsolate}>Solo elegido</button>
-          <button className="event-jump" onClick={props.onEventFocus}>Ir a evento</button>
         </div>
       </div>
       <RadarMap vehicles={radarVehicles} eventPolygon={props.eventPolygon} selectedId={props.selected?.id} radarMode={props.radarMode} cinematicMode={props.cinematicMode} showHeatmap={props.showHeatmap} locatingVehicle={props.locatingVehicle} eventFocusKey={props.eventFocusKey} selectedFocusKey={props.selectedFocusKey} onSelect={props.onSelect} />
