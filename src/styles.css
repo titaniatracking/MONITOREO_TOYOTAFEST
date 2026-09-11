@@ -1425,6 +1425,20 @@ button.summary-card {
   transform: translateY(-1px);
 }
 
+.search-input .search-event-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-color: rgba(255, 255, 255, 0.17);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.search-input .search-event-button:hover {
+  border-color: rgba(235, 10, 30, 0.62);
+  background: rgba(235, 10, 30, 0.14);
+}
+
 .search-analyzer {
   position: relative;
   display: flex;
@@ -2468,6 +2482,8 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   }
   .search-input { padding: 8px 9px; }
   .search-input button { padding: 0 10px; }
+  .search-input .search-event-button { width: 34px; padding: 0; }
+  .search-input .search-event-button span { display: none; }
   .search-results button {
     grid-template-columns: minmax(76px, 0.85fr) minmax(0, 1.15fr) auto;
     padding: 9px 8px;

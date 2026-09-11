@@ -136,6 +136,11 @@ export function App() {
     setEventFocusKey((value) => value + 1);
   };
 
+  const resetSearchAndFocusEvent = () => {
+    focusEvent();
+    setActiveView("summary");
+  };
+
   const selectVehicle = async (vehicle: VehicleTelemetry) => {
     const requestId = ++selectionRequestId.current;
     setLocatingVehicle(true);
@@ -263,7 +268,7 @@ export function App() {
             <div className="summary-toolbar">
               <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
               <div className="top-search">
-                <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+                <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} onEventFocus={resetSearchAndFocusEvent} />
               </div>
             </div>
             <section className="content-grid">
@@ -290,7 +295,7 @@ export function App() {
 
         {activeView === "search" && (
           <section className="single-view compact-view">
-            <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+            <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} onEventFocus={resetSearchAndFocusEvent} />
           </section>
         )}
 
@@ -438,11 +443,12 @@ function SearchPanel(props: {
   setQuery: (query: string) => void;
   onSelect: (vehicle: VehicleTelemetry) => void;
   onSelectRecord: (record: VehicleSearchRecord) => void;
+  onEventFocus: () => void;
 }) {
   return (
     <section className="panel search-card">
       <PanelTitle title="Buscar vehiculo" />
-      <SearchBar query={props.query} vehicles={props.vehicles} onQuery={props.setQuery} onSelect={props.onSelect} onSelectRecord={props.onSelectRecord} />
+      <SearchBar query={props.query} vehicles={props.vehicles} onQuery={props.setQuery} onSelect={props.onSelect} onSelectRecord={props.onSelectRecord} onEventFocus={props.onEventFocus} />
       {!props.vehicles.length && <EmptyState title="Sin vehiculos reales" text="La busqueda se habilitara cuando el backend reciba telemetria real." />}
     </section>
   );

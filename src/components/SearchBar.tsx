@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { MapPinned, Search } from "lucide-react";
 import type { VehicleSearchRecord, VehicleTelemetry } from "../types";
 import { apiUrl } from "../utils/api";
 import { statusLabel } from "../utils/labels";
@@ -10,9 +10,10 @@ interface SearchBarProps {
   onQuery: (query: string) => void;
   onSelect: (vehicle: VehicleTelemetry) => void;
   onSelectRecord: (record: VehicleSearchRecord) => void;
+  onEventFocus: () => void;
 }
 
-export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }: SearchBarProps) {
+export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord, onEventFocus }: SearchBarProps) {
   const [deferredQuery, setDeferredQuery] = useState(query);
   const [baseRecords, setBaseRecords] = useState<VehicleSearchRecord[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -92,6 +93,10 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
           placeholder="Buscar placa, nombre, cedula, chasis o dispositivo..."
         />
         <button onClick={submitSearch}>Buscar</button>
+        <button className="search-event-button" onClick={onEventFocus} title="Limpiar busqueda y centrar el evento">
+          <MapPinned size={14} />
+          <span>Ir al evento</span>
+        </button>
       </div>
       {analyzing && (
         <div className="search-analyzer">
