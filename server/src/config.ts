@@ -26,6 +26,11 @@ export const config = {
     database: process.env.VAPOR_DB_NAME ?? "vapor",
     baseDatabase: process.env.VAPOR_BASE_DB_NAME ?? "BD_TITANIA",
     customerDatabase: process.env.VAPOR_CUSTOMER_DB_NAME ?? "s3s_facturacion",
+    centralHost: process.env.CENTRAL_DB_HOST ?? "",
+    centralUser: process.env.CENTRAL_DB_USER ?? "",
+    centralPassword: process.env.CENTRAL_DB_PASSWORD ?? "",
+    centralPort: Number(process.env.CENTRAL_DB_PORT ?? 3306),
+    centralDatabase: process.env.CENTRAL_DB_NAME ?? "s3s_facturacion",
   },
   db: {
     host: process.env.DB_HOST ?? "",

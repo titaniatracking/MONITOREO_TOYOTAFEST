@@ -9,6 +9,11 @@ export interface VaporDbConfig {
   database: string;
   baseDatabase: string;
   customerDatabase: string;
+  centralHost?: string;
+  centralUser?: string;
+  centralPassword?: string;
+  centralPort?: number;
+  centralDatabase?: string;
 }
 
 interface VaporVehicle {
@@ -55,6 +60,7 @@ export class VaporService {
   private readonly vehiclePool?: Pool;
   private readonly basePool?: Pool;
   private readonly customerPool?: Pool;
+  private readonly centralPool?: Pool;
   private vehicleCache = new Map<string, { expiresAt: number; value: VaporVehicle }>();
   private customerCache = new Map<string, { expiresAt: number; value: VaporCustomer }>();
 
@@ -80,6 +86,18 @@ export class VaporService {
       this.customerPool = mysql.createPool({
         ...shared,
         database: config.customerDatabase,
+      });
+    }
+    if (config.centralHost && config.centralUser && config.centralPassword) {
+      this.centralPool = mysql.createPool({
+        host: config.centralHost,
+        user: config.centralUser,
+        password: config.centralPassword,
+        port: config.centralPort ?? 3306,
+        database: config.centralDatabase ?? "s3s_facturacion",
+        waitForConnections: true,
+        connectionLimit: 4,
+        namedPlaceholders: false,
       });
     }
   }
@@ -146,6 +164,7 @@ export class VaporService {
     const term = normalizeSearch(query);
     if (!term || !this.vehiclePool) return [];
     const baseRows = await this.searchBaseRecords(term, limit);
+    const authoritativeRows = await this.searchCentralRecords(term, limit).catch(() => []);
     const customerMatches = await this.searchCustomers(term, limit).catch(() => []);
     const customerPlates = Array.from(new Set(customerMatches.map((row) => normalizePlate(row.plate)).filter(Boolean)));
     const customerChassis = Array.from(new Set(customerMatches.map((row) => normalizePlate(row.chassis)).filter(Boolean)));
@@ -205,6 +224,10 @@ export class VaporService {
       const record = row as VaporVehicle;
       const key = recordKey(record);
       rowsByKey.set(key, { ...rowsByKey.get(key), ...record });
+    }
+    for (const record of authoritativeRows) {
+      const key = recordKey(record);
+      rowsByKey.set(key, mergePreferred(rowsByKey.get(key), record));
     }
     for (const customer of customerMatches) {
       const key = recordKey({ plate: customer.plate, chassis: customer.chassis });
@@ -289,6 +312,57 @@ export class VaporService {
          ID DESC
        LIMIT ?`,
       [...Array(9).fill(like), limit]
+    );
+    return rows.map((row) => row as VaporVehicle);
+  }
+
+  private async searchCentralRecords(term: string, limit: number) {
+    if (!this.centralPool) return [];
+    const like = `%${term}%`;
+    const [rows] = await this.centralPool.query<RowDataPacket[]>(
+      `SELECT
+         imei,
+         sim,
+         chasis chassis,
+         placa plate,
+         marca brand,
+         modelo,
+         anio year,
+         JSON_UNQUOTE(JSON_EXTRACT(data, '$.color')) color,
+         dealer,
+         dealer_crm dealerCode,
+         estado_vehiculo serviceStatus,
+         cliente owner,
+         cedula document,
+         telefono phone,
+         email,
+         JSON_UNQUOTE(JSON_EXTRACT(data, '$.direccion')) address,
+         dealer platform,
+         tipo_dispositivo deviceType,
+         tipo_red_equipo networkType,
+         tipo_sim simType,
+         JSON_UNQUOTE(JSON_EXTRACT(data, '$.fase')) phase,
+         beneficios benefit,
+         JSON_UNQUOTE(JSON_EXTRACT(data, '$.fecha_instalacion')) installationDate,
+         JSON_UNQUOTE(JSON_EXTRACT(data, '$.fecha_inicio')) startDate,
+         DATE_FORMAT(fecha_vencimiento_nueva, '%Y-%m-%d') endDate
+       FROM base_central_clientes
+       WHERE registro_valido = 1
+         AND (
+           REPLACE(UPPER(COALESCE(codigo, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(chasis, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(cedula, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(cliente, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(placa, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(imei, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(sim, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(marca, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(modelo, '')), ' ', '') LIKE ?
+           OR REPLACE(UPPER(COALESCE(dealer, '')), ' ', '') LIKE ?
+         )
+       ORDER BY synced_at DESC, id DESC
+       LIMIT ?`,
+      [...Array(10).fill(like), limit]
     );
     return rows.map((row) => row as VaporVehicle);
   }
@@ -440,6 +514,48 @@ export class VaporService {
       }
     }
 
+    if (this.centralPool) {
+      const allKeys = Array.from(new Set([...ids.map(normalizePlate), ...plates, ...chassis])).filter(Boolean);
+      if (allKeys.length) {
+        const placeholders = allKeys.map(() => "?").join(",");
+        const [centralRows] = await this.centralPool.query<RowDataPacket[]>(
+          `SELECT
+             imei, sim, chasis chassis, placa plate, marca brand, modelo, anio year,
+             JSON_UNQUOTE(JSON_EXTRACT(data, '$.color')) color,
+             dealer, dealer_crm dealerCode, estado_vehiculo serviceStatus,
+             cliente owner, cedula document, telefono phone, email,
+             JSON_UNQUOTE(JSON_EXTRACT(data, '$.direccion')) address,
+             dealer platform, tipo_dispositivo deviceType, tipo_red_equipo networkType,
+             tipo_sim simType, JSON_UNQUOTE(JSON_EXTRACT(data, '$.fase')) phase,
+             beneficios benefit,
+             JSON_UNQUOTE(JSON_EXTRACT(data, '$.fecha_instalacion')) installationDate,
+             JSON_UNQUOTE(JSON_EXTRACT(data, '$.fecha_inicio')) startDate,
+             DATE_FORMAT(fecha_vencimiento_nueva, '%Y-%m-%d') endDate
+           FROM base_central_clientes
+           WHERE registro_valido = 1
+             AND (
+               REPLACE(UPPER(COALESCE(imei, '')), ' ', '') IN (${placeholders})
+               OR REPLACE(UPPER(COALESCE(chasis, '')), ' ', '') IN (${placeholders})
+               OR REPLACE(UPPER(COALESCE(placa, '')), ' ', '') IN (${placeholders})
+               OR REPLACE(UPPER(COALESCE(codigo, '')), ' ', '') IN (${placeholders})
+             )
+           ORDER BY synced_at DESC, id DESC
+           LIMIT 1200`,
+          [...allKeys, ...allKeys, ...allKeys, ...allKeys]
+        );
+
+        for (const row of centralRows) {
+          const vehicle = row as VaporVehicle;
+          for (const key of [vehicle.imei, normalizePlate(vehicle.plate), normalizePlate(vehicle.chassis)]) {
+            if (!key) continue;
+            const merged = mergePreferred(output.get(key), vehicle);
+            this.writeCache(this.vehicleCache, key, merged);
+            output.set(key, merged);
+          }
+        }
+      }
+    }
+
     return output;
   }
 
@@ -580,4 +696,11 @@ function recordKey(record: Pick<VaporVehicle, "imei" | "idFlespi" | "traccarDevi
     normalizePlate(record.chassis) ||
     Math.random().toString(36)
   );
+}
+
+function mergePreferred(base: VaporVehicle | undefined, preferred: VaporVehicle) {
+  const populated = Object.fromEntries(
+    Object.entries(preferred).filter(([, value]) => value !== null && value !== undefined && value !== "")
+  ) as VaporVehicle;
+  return { ...base, ...populated };
 }
