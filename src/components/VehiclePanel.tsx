@@ -30,6 +30,7 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
   if (!vehicle) return null;
   const isLive = Number.isFinite(Number((vehicle as VehicleTelemetry).lat)) && Number.isFinite(Number((vehicle as VehicleTelemetry).lng));
   const liveVehicle = isLive ? (vehicle as VehicleTelemetry) : null;
+  const modelLabel = displayModel(vehicle);
 
   useEffect(() => {
     setRouteSummary(null);
@@ -65,10 +66,11 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
       <p className="eyebrow">VEHICULO EN VIVO</p>
       <h2>{vehicle.plate}</h2>
       <span className={`status-pill status-${(vehicle.status ?? "OFFLINE").toLowerCase()}`}>{liveVehicle ? statusLabel(liveVehicle.status) : "Registro base central"}</span>
-      <p className="vehicle-model">{vehicle.model}</p>
+      <p className="vehicle-model">{modelLabel}</p>
       <p className="vehicle-owner">{vehicle.owner && vehicle.owner !== "Dato real" ? vehicle.owner : "Cliente pendiente en base"}</p>
 
       <div className="telemetry-grid">
+        <Datum label="MODELO" value={modelLabel} />
         <Datum label="CLIENTE" value={vehicle.owner && vehicle.owner !== "Dato real" ? vehicle.owner : "PENDIENTE"} />
         <Datum label="CEDULA / RUC" value={vehicle.document || "PENDIENTE"} />
         <Datum label="CHASIS" value={vehicle.chassis || "PENDIENTE"} />
@@ -121,6 +123,16 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
       )}
     </aside>
   );
+}
+
+function displayModel(vehicle: VehicleTelemetry | VehicleSearchRecord) {
+  const model = String(vehicle.model || "").trim();
+  const isTechnicalId = /^\d{5,}$/.test(model);
+  const isGeneric = ["VEHICULO", "VEHICULO TOYOTA", "TOYOTA"].includes(model.toUpperCase());
+  if (model && !isTechnicalId && !isGeneric) return model;
+
+  const fallback = [vehicle.brand, vehicle.year].filter(Boolean).join(" ").trim();
+  return fallback || "MODELO PENDIENTE";
 }
 
 function compactRouteEvents(points: RoutePoint[]) {

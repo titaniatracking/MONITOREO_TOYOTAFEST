@@ -201,9 +201,16 @@ app.get("/api/geofence/event", async (_request, response, next) => {
 });
 
 const frontendPath = path.resolve(process.cwd(), "dist");
-app.use(express.static(frontendPath));
+app.use(express.static(frontendPath, {
+  setHeaders(response, filePath) {
+    if (path.basename(filePath) === "index.html") {
+      response.setHeader("Cache-Control", "no-store");
+    }
+  },
+}));
 app.use((request, response, next) => {
   if (request.method === "GET" && request.accepts("html")) {
+    response.setHeader("Cache-Control", "no-store");
     return response.sendFile(path.join(frontendPath, "index.html"));
   }
   return next();
