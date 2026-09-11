@@ -200,7 +200,7 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
 
       {cinematicMode && (selected || closest) && (
         <div className="cinematic-target">
-          <small>VEHICULO PRIORITARIO</small>
+          <small>{displayVehicleModel(selected || closest)}</small>
           <strong>{(selected || closest).plate}</strong>
           <span>{statusLabel((selected || closest).status)} / {(selected || closest).distanceToEvent.toFixed(1)} KM / ETA {(selected || closest).etaToEvent ?? "--"} MIN</span>
         </div>
@@ -228,6 +228,16 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
       <div className="map-attribution">Mapa de Quito / OpenStreetMap</div>
     </section>
   );
+}
+
+function displayVehicleModel(vehicle: VehicleTelemetry) {
+  const model = String(vehicle.model || "").trim();
+  const normalized = model.toUpperCase();
+  if (model && !/^\d{5,}$/.test(model) && !["TOYOTA", "VEHICULO", "VEHICULO TOYOTA"].includes(normalized)) {
+    return model;
+  }
+
+  return [vehicle.brand, vehicle.year].filter(Boolean).join(" ") || "MODELO PENDIENTE";
 }
 
 function VehicleTarget({ vehicle, selected, mapBounds, onSelect }: { vehicle: VehicleTelemetry; selected: boolean; mapBounds: ReturnType<typeof boundsFromCenter>; onSelect: () => void }) {
