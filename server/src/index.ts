@@ -8,7 +8,7 @@ import { pool } from "./db/pool";
 import { FlespiService } from "./services/flespi.service";
 import { TraccarService } from "./services/traccar.service";
 import { VaporService } from "./services/vapor.service";
-import { geofenceEntriesByDate, latestVehicles, recordGeofenceEntries, savePositions, todayRouteByDeviceId } from "./repositories/vehicle.repository";
+import { geofenceEntriesByDate, geofenceEntryReport, latestVehicles, recordGeofenceEntries, savePositions, todayRouteByDeviceId } from "./repositories/vehicle.repository";
 
 const app = express();
 const httpServer = createServer(app);
@@ -189,6 +189,20 @@ app.get("/api/events/entries", async (request, response, next) => {
   }
 });
 
+app.get("/api/reports/event-entries", async (request, response, next) => {
+  try {
+    const dateFrom = String(request.query.from ?? "");
+    const dateTo = String(request.query.to ?? "");
+    if (!isValidDateRange(dateFrom, dateTo)) {
+      return response.status(400).json({ error: "Rango de fechas invalido" });
+    }
+    const report = await geofenceEntryReport(dateFrom, dateTo);
+    return response.json({ dateFrom, dateTo, ...report });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.get("/api/flespi/devices", async (_request, response, next) => {
   try {
     response.json(await flespi.getDevices());
@@ -334,4 +348,11 @@ function parseTraccarPolygon(area: string) {
     .map((pair) => pair.trim().split(/\s+/).map(Number))
     .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng))
     .map(([lat, lng]) => ({ lat, lng }));
+}
+
+function isValidDateRange(dateFrom: string, dateTo: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom) || !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) return false;
+  const from = Date.parse(`${dateFrom}T00:00:00Z`);
+  const to = Date.parse(`${dateTo}T00:00:00Z`);
+  return Number.isFinite(from) && Number.isFinite(to) && from <= to && to - from <= 366 * 86_400_000;
 }

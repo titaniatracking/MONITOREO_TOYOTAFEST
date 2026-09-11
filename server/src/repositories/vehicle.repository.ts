@@ -115,26 +115,91 @@ export async function geofenceEntriesByDate(date: string) {
        e.latitude lat,
        e.longitude lng,
        UNIX_TIMESTAMP(e.event_time) * 1000 timestamp,
-       DATE_FORMAT(e.event_time, '%H:%i:%s') time
+       DATE_FORMAT(DATE_SUB(e.event_time, INTERVAL 5 HOUR), '%H:%i:%s') time
      FROM vehicle_events e
      JOIN vehicles v ON v.id = e.vehicle_id
      WHERE e.event_type = 'GEOFENCE_ENTER'
-       AND DATE(e.event_time) = :date
+       AND e.event_time >= DATE_ADD(:date, INTERVAL 5 HOUR)
+       AND e.event_time < DATE_ADD(DATE_ADD(:date, INTERVAL 1 DAY), INTERVAL 5 HOUR)
      ORDER BY e.event_time DESC
      LIMIT 500`,
     { date }
   );
   const [hourly] = await pool.execute<RowDataPacket[]>(
-    `SELECT HOUR(event_time) hour, COUNT(*) total
+    `SELECT HOUR(DATE_SUB(event_time, INTERVAL 5 HOUR)) hour, COUNT(*) total
      FROM vehicle_events
      WHERE event_type = 'GEOFENCE_ENTER'
-       AND DATE(event_time) = :date
-     GROUP BY HOUR(event_time)
+       AND event_time >= DATE_ADD(:date, INTERVAL 5 HOUR)
+       AND event_time < DATE_ADD(DATE_ADD(:date, INTERVAL 1 DAY), INTERVAL 5 HOUR)
+     GROUP BY HOUR(DATE_SUB(event_time, INTERVAL 5 HOUR))
      ORDER BY hour`,
     { date }
   );
 
   return { entries, hourly };
+}
+
+export async function geofenceEntryReport(dateFrom: string, dateTo: string) {
+  const parameters = { dateFrom, dateTo };
+  const [summaryRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT
+       COUNT(*) totalEntries,
+       COUNT(DISTINCT vehicle_id) uniqueVehicles,
+       COUNT(DISTINCT DATE(DATE_SUB(event_time, INTERVAL 5 HOUR))) activeDays
+     FROM vehicle_events
+     WHERE event_type = 'GEOFENCE_ENTER'
+       AND event_time >= DATE_ADD(:dateFrom, INTERVAL 5 HOUR)
+       AND event_time < DATE_ADD(DATE_ADD(:dateTo, INTERVAL 1 DAY), INTERVAL 5 HOUR)`,
+    parameters
+  );
+  const [daily] = await pool.execute<RowDataPacket[]>(
+    `SELECT
+       DATE_FORMAT(DATE_SUB(event_time, INTERVAL 5 HOUR), '%Y-%m-%d') date,
+       COUNT(*) total,
+       COUNT(DISTINCT vehicle_id) uniqueVehicles
+     FROM vehicle_events
+     WHERE event_type = 'GEOFENCE_ENTER'
+       AND event_time >= DATE_ADD(:dateFrom, INTERVAL 5 HOUR)
+       AND event_time < DATE_ADD(DATE_ADD(:dateTo, INTERVAL 1 DAY), INTERVAL 5 HOUR)
+     GROUP BY DATE(DATE_SUB(event_time, INTERVAL 5 HOUR))
+     ORDER BY DATE(DATE_SUB(event_time, INTERVAL 5 HOUR))`,
+    parameters
+  );
+  const [hourly] = await pool.execute<RowDataPacket[]>(
+    `SELECT HOUR(DATE_SUB(event_time, INTERVAL 5 HOUR)) hour, COUNT(*) total, COUNT(DISTINCT vehicle_id) uniqueVehicles
+     FROM vehicle_events
+     WHERE event_type = 'GEOFENCE_ENTER'
+       AND event_time >= DATE_ADD(:dateFrom, INTERVAL 5 HOUR)
+       AND event_time < DATE_ADD(DATE_ADD(:dateTo, INTERVAL 1 DAY), INTERVAL 5 HOUR)
+     GROUP BY HOUR(DATE_SUB(event_time, INTERVAL 5 HOUR))
+     ORDER BY hour`,
+    parameters
+  );
+  const [entries] = await pool.execute<RowDataPacket[]>(
+    `SELECT
+       e.id,
+       v.device_id deviceId,
+       v.plate,
+       v.model,
+       v.owner_name owner,
+       DATE_FORMAT(DATE_SUB(e.event_time, INTERVAL 5 HOUR), '%Y-%m-%d') date,
+       DATE_FORMAT(DATE_SUB(e.event_time, INTERVAL 5 HOUR), '%H:%i:%s') time
+     FROM vehicle_events e
+     JOIN vehicles v ON v.id = e.vehicle_id
+     WHERE e.event_type = 'GEOFENCE_ENTER'
+       AND e.event_time >= DATE_ADD(:dateFrom, INTERVAL 5 HOUR)
+       AND e.event_time < DATE_ADD(DATE_ADD(:dateTo, INTERVAL 1 DAY), INTERVAL 5 HOUR)
+     ORDER BY e.event_time DESC
+     LIMIT 200`,
+    parameters
+  );
+
+  return {
+    summary: summaryRows[0] ?? { totalEntries: 0, uniqueVehicles: 0, activeDays: 0 },
+    daily,
+    hourly,
+    entries,
+  };
 }
 
 export async function todayRouteByDeviceId(deviceId: string) {

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  Car,
   CheckCircle2,
   FileText,
   Gauge,
@@ -15,12 +14,12 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Timer,
   TrendingUp,
   Wifi,
   X,
 } from "lucide-react";
 import { ActivityFeed } from "./components/ActivityFeed";
+import { EventReports } from "./components/EventReports";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { RadarMap } from "./components/RadarMap";
 import { ReplayControls } from "./components/ReplayControls";
@@ -307,7 +306,7 @@ export function App() {
 
         {activeView === "reports" && (
           <section className="single-view compact-view">
-            <ReportsPanel stats={stats} vehicles={vehicles} source={source} lastUpdate={lastUpdate} />
+            <ReportsPanel />
           </section>
         )}
 
@@ -485,16 +484,11 @@ function RoutesPanel({ vehicles, onSelect }: { vehicles: VehicleTelemetry[]; onS
   );
 }
 
-function ReportsPanel({ stats, vehicles, source, lastUpdate }: { stats: ReturnType<typeof useToyotaRadar>["stats"]; vehicles: VehicleTelemetry[]; source: string; lastUpdate: Date }) {
+function ReportsPanel() {
   return (
     <section className="panel reports-card">
-      <PanelTitle title="Reportes" />
-      <div className="report-grid">
-        <SummaryCard icon={<Car size={24} />} label="Total vehiculos" value={vehicles.length} hint={`Origen: ${source}`} tone="red" />
-        <SummaryCard icon={<MapPinned size={24} />} label="En evento" value={stats.atEvent} hint="Dentro de geocerca" tone="green" />
-        <SummaryCard icon={<TrendingUp size={24} />} label="Ingresando" value={stats.arriving} hint="Entrando a geocerca" tone="purple" />
-        <SummaryCard icon={<Timer size={24} />} label="Ultima actualizacion" value={lastUpdate.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })} hint="Backend real" tone="purple" />
-      </div>
+      <PanelTitle title="Reporte de ingresos al evento" />
+      <EventReports />
     </section>
   );
 }
