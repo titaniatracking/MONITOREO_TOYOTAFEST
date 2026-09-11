@@ -366,8 +366,17 @@ function MapPanel(props: {
   onEventFocus: () => void;
   large?: boolean;
 }) {
+  const hasSelectedVehicle = Boolean(
+    props.selected && props.vehicles.some((vehicle) => sameVehicle(props.selected as VehicleTelemetry, vehicle))
+  );
   const radarVehicles = props.selected
-    ? props.vehicles.map((vehicle) => sameVehicle(props.selected as VehicleTelemetry, vehicle) ? mergeSelectedWithFreshPosition(props.selected as VehicleTelemetry, vehicle) : vehicle)
+    ? hasSelectedVehicle
+      ? props.vehicles.map((vehicle) =>
+          sameVehicle(props.selected as VehicleTelemetry, vehicle)
+            ? { ...mergeSelectedWithFreshPosition(props.selected as VehicleTelemetry, vehicle), id: props.selected!.id }
+            : vehicle
+        )
+      : [props.selected, ...props.vehicles]
     : props.vehicles;
 
   return (
