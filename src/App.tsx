@@ -49,7 +49,7 @@ const menuItems: Array<{ key: ViewKey; label: string; icon: ReactNode }> = [
 ];
 
 export function App() {
-  const { vehicles, events, stats, lastUpdate, source, loadingRealData, error, eventPolygon } = useToyotaRadar();
+  const { vehicles, stats, lastUpdate, source, loadingRealData, error, eventPolygon } = useToyotaRadar();
   const backendHealth = useBackendHealth();
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState<ViewKey>("summary");
@@ -277,7 +277,7 @@ export function App() {
             </section>
             <section className="bottom-grid">
               <RoutesPanel vehicles={vehicles} onSelect={openVehicleSummary} />
-              <ActivityFeed events={events} />
+              <ActivityFeed />
               <SystemPanel backendHealth={backendHealth} source={source} error={error} />
             </section>
           </>

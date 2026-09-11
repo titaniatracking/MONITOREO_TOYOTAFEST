@@ -54,11 +54,6 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
   );
   const worldStyle = dragOffset.x || dragOffset.y ? ({ transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)` } as CSSProperties) : undefined;
 
-  const closest = useMemo(
-    () => vehicles.filter((vehicle) => vehicle.status === "APPROACHING").sort((a, b) => a.distanceToEvent - b.distanceToEvent)[0],
-    [vehicles]
-  );
-
   useEffect(() => {
     if (!selected) return;
     setMapCenter({ lat: selected.lat, lng: selected.lng });
@@ -187,11 +182,11 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
         ))}
       </div>
 
-      {cinematicMode && (selected || closest) && (
+      {cinematicMode && selected && (
         <div className="cinematic-target">
-          <small>{displayVehicleModel(selected || closest)}</small>
-          <strong>{(selected || closest).plate}</strong>
-          <span>{statusLabel((selected || closest).status)} / {(selected || closest).distanceToEvent.toFixed(1)} KM / ETA {(selected || closest).etaToEvent ?? "--"} MIN</span>
+          <small>{displayVehicleModel(selected)}</small>
+          <strong>{selected.plate}</strong>
+          <span>{statusLabel(selected.status)} / {selected.distanceToEvent.toFixed(1)} KM / ETA {selected.etaToEvent ?? "--"} MIN</span>
         </div>
       )}
       <div className="map-zoom-controls">

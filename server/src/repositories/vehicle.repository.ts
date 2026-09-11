@@ -76,6 +76,67 @@ export async function savePositions(vehicles: any[]) {
   }
 }
 
+export async function recordGeofenceEntries(vehicles: VehicleTelemetry[]) {
+  for (const vehicle of vehicles) {
+    const vehicleId = await upsertVehicle(vehicle);
+    await pool.execute(
+      `INSERT INTO vehicle_events
+        (vehicle_id, event_type, latitude, longitude, distance_to_event, event_time, metadata)
+       SELECT
+        :vehicleId, 'GEOFENCE_ENTER', :lat, :lng, :distanceToEvent,
+        FROM_UNIXTIME(:timestamp / 1000), JSON_OBJECT('source', :source)
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM vehicle_events
+         WHERE vehicle_id = :vehicleId
+           AND event_type = 'GEOFENCE_ENTER'
+           AND event_time >= DATE_SUB(FROM_UNIXTIME(:timestamp / 1000), INTERVAL 5 MINUTE)
+       )`,
+      {
+        vehicleId,
+        lat: vehicle.lat,
+        lng: vehicle.lng,
+        distanceToEvent: vehicle.distanceToEvent ?? null,
+        timestamp: vehicle.timestamp,
+        source: vehicle.source ?? "traccar",
+      }
+    );
+  }
+}
+
+export async function geofenceEntriesByDate(date: string) {
+  const [entries] = await pool.execute<RowDataPacket[]>(
+    `SELECT
+       e.id,
+       v.device_id deviceId,
+       v.plate,
+       v.model,
+       v.owner_name owner,
+       e.latitude lat,
+       e.longitude lng,
+       UNIX_TIMESTAMP(e.event_time) * 1000 timestamp,
+       DATE_FORMAT(e.event_time, '%H:%i:%s') time
+     FROM vehicle_events e
+     JOIN vehicles v ON v.id = e.vehicle_id
+     WHERE e.event_type = 'GEOFENCE_ENTER'
+       AND DATE(e.event_time) = :date
+     ORDER BY e.event_time DESC
+     LIMIT 500`,
+    { date }
+  );
+  const [hourly] = await pool.execute<RowDataPacket[]>(
+    `SELECT HOUR(event_time) hour, COUNT(*) total
+     FROM vehicle_events
+     WHERE event_type = 'GEOFENCE_ENTER'
+       AND DATE(event_time) = :date
+     GROUP BY HOUR(event_time)
+     ORDER BY hour`,
+    { date }
+  );
+
+  return { entries, hourly };
+}
+
 export async function todayRouteByDeviceId(deviceId: string) {
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT

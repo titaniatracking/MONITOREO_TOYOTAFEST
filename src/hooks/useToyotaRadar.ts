@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ActivityEvent, GeoPoint, VehicleApiResponse, VehicleStatus, VehicleTelemetry } from "../types";
+import type { GeoPoint, VehicleApiResponse, VehicleStatus, VehicleTelemetry } from "../types";
 import { apiUrl } from "../utils/api";
 import { bearingDeg, corridorFor, distanceKm, etaMinutes, EVENT_CENTER, EVENT_POLYGON, isInsideEventGeofence } from "../utils/geo";
 import { statusLabel } from "../utils/labels";
 
 export function useToyotaRadar() {
   const [vehicles, setVehicles] = useState<VehicleTelemetry[]>([]);
-  const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [lastUpdate, setLastUpdate] = useState(() => new Date());
   const [source, setSource] = useState<VehicleApiResponse["source"]>("database");
   const [loadingRealData, setLoadingRealData] = useState(true);
@@ -53,7 +52,6 @@ export function useToyotaRadar() {
           if (!incoming.length && current.length) return current;
 
           const merged = mergeRealVehicles(current, incoming, eventPolygonRef.current);
-          setEvents(buildLiveEvents(merged));
           return merged;
         });
         setError(null);
@@ -87,7 +85,7 @@ export function useToyotaRadar() {
     };
   }, [vehicles]);
 
-  return { vehicles, events, stats, lastUpdate, source, loadingRealData, error, eventPolygon };
+  return { vehicles, stats, lastUpdate, source, loadingRealData, error, eventPolygon };
 }
 
 function mergeRealVehicles(current: VehicleTelemetry[], incoming: Partial<VehicleTelemetry>[], eventPolygon: GeoPoint[]) {
@@ -200,19 +198,4 @@ function normalizeStatus(status: VehicleStatus | undefined, point: GeoPoint, eve
   if (distanceToEvent < 10 && speed > 3) return "APPROACHING";
   if (speed < 2) return "STOPPED";
   return "MOVING";
-}
-
-function buildLiveEvents(vehicles: VehicleTelemetry[]): ActivityEvent[] {
-  return vehicles
-    .slice()
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 20)
-    .map((vehicle) => ({
-      id: `${vehicle.id}-${vehicle.timestamp}-${vehicle.status}`,
-      time: new Date(vehicle.timestamp).toLocaleTimeString("es-EC", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      plate: vehicle.plate,
-      type: statusLabel(vehicle.status),
-      detail: `${vehicle.distanceToEvent.toFixed(1)} km / ${vehicle.speed.toFixed(0)} km/h`,
-      status: vehicle.status,
-    }));
 }

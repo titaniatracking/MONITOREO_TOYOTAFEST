@@ -8,7 +8,7 @@ import { pool } from "./db/pool";
 import { FlespiService } from "./services/flespi.service";
 import { TraccarService } from "./services/traccar.service";
 import { VaporService } from "./services/vapor.service";
-import { latestVehicles, savePositions, todayRouteByDeviceId } from "./repositories/vehicle.repository";
+import { geofenceEntriesByDate, latestVehicles, recordGeofenceEntries, savePositions, todayRouteByDeviceId } from "./repositories/vehicle.repository";
 
 const app = express();
 const httpServer = createServer(app);
@@ -34,6 +34,15 @@ const flespi = new FlespiService({ token: config.flespi.token, baseUrl: config.f
 const traccar = new TraccarService(config.traccar);
 const vapor = new VaporService(config.vaporDb);
 const EVENT_GEOFENCE_ID = 982;
+const EVENT_POLYGON = [
+  { lat: -0.020209702295415, lng: -78.451972885051 },
+  { lat: -0.022763165097831, lng: -78.451844139019 },
+  { lat: -0.02284899577951, lng: -78.44623295776 },
+  { lat: -0.021121653301151, lng: -78.445321006694 },
+  { lat: -0.020435007838491, lng: -78.447241468349 },
+  { lat: -0.020198973460024, lng: -78.44775645248 },
+];
+const vehicleGeofenceState = new Map<string, boolean>();
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -64,6 +73,7 @@ app.get("/api/vehicles/live", async (_request, response, next) => {
       try {
         const vehicles = await withTimeout(traccar.getLiveVehicles(), 10000, "Traccar timeout");
         if (vehicles.length) {
+          trackGeofenceEntries(vehicles);
           persistPositions(vehicles);
           return response.json({ source: "traccar", vehicles });
         }
@@ -76,6 +86,7 @@ app.get("/api/vehicles/live", async (_request, response, next) => {
       try {
         const vehicles = await withTimeout(flespi.getLiveVehicles(), 7000, "Flespi timeout");
         if (vehicles.length) {
+          trackGeofenceEntries(vehicles);
           persistPositions(vehicles);
           return response.json({ source: "flespi", vehicles });
         }
@@ -162,6 +173,19 @@ app.get("/api/vehicles/:deviceId/route/today", async (request, response, next) =
     });
   } catch (error) {
     next(error);
+  }
+});
+
+app.get("/api/events/entries", async (request, response, next) => {
+  try {
+    const date = String(request.query.date ?? "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return response.status(400).json({ error: "Fecha invalida" });
+    }
+    const log = await geofenceEntriesByDate(date);
+    return response.json({ date, ...log });
+  } catch (error) {
+    return next(error);
   }
 });
 
@@ -256,6 +280,37 @@ function persistPositions(vehicles: Parameters<typeof savePositions>[0]) {
   void savePositions(vehicles).catch((error) => {
     console.warn(error instanceof Error ? error.message : "Could not persist vehicle positions");
   });
+}
+
+function trackGeofenceEntries(vehicles: Parameters<typeof savePositions>[0]) {
+  const entered = [];
+  for (const vehicle of vehicles) {
+    const key = String(vehicle.deviceId || vehicle.imei || vehicle.plate || "");
+    if (!key) continue;
+    const inside = isInsidePolygon(vehicle, EVENT_POLYGON);
+    const previous = vehicleGeofenceState.get(key);
+    vehicleGeofenceState.set(key, inside);
+    if (previous === false && inside && Date.now() - Number(vehicle.timestamp) < 10 * 60 * 1000) {
+      entered.push(vehicle);
+    }
+  }
+
+  if (!entered.length) return;
+  void enrichWithVapor(entered)
+    .then((enriched) => recordGeofenceEntries(enriched))
+    .catch((error) => console.warn(error instanceof Error ? error.message : "Could not record geofence entries"));
+}
+
+function isInsidePolygon(point: { lat: number; lng: number }, polygon: Array<{ lat: number; lng: number }>) {
+  let inside = false;
+  for (let current = 0, previous = polygon.length - 1; current < polygon.length; previous = current, current += 1) {
+    const a = polygon[current];
+    const b = polygon[previous];
+    const crossesLatitude = a.lat > point.lat !== b.lat > point.lat;
+    const boundaryLng = ((b.lng - a.lng) * (point.lat - a.lat)) / (b.lat - a.lat || Number.EPSILON) + a.lng;
+    if (crossesLatitude && point.lng < boundaryLng) inside = !inside;
+  }
+  return inside;
 }
 
 async function enrichWithVapor(vehicles: Parameters<typeof savePositions>[0]) {
