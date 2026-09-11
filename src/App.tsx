@@ -332,6 +332,9 @@ function SummaryRow({
 }) {
   return (
     <section className="summary-row">
+      <div className="summary-brand" aria-label="Toyota Experience Fest">
+        <img src={TOYOTA_LOGO_URL} alt="Toyota Experience Fest" />
+      </div>
       <SummaryCard icon={<CheckCircle2 size={26} />} label="En evento" value={stats.atEvent} hint={`${totalVehicles} vehiculos monitoreados`} tone="green" active={activeFilter === "AT_EVENT"} onClick={() => onFilter("AT_EVENT")} />
       <SummaryCard icon={<TrendingUp size={26} />} label="Ingresando" value={stats.arriving} hint="Entrando a la geocerca" tone="purple" active={activeFilter === "ARRIVING"} onClick={() => onFilter("ARRIVING")} />
       <SummaryCard icon={<Navigation size={26} />} label="Vehiculos acercandose" value={stats.approaching} hint="Proximos a la geocerca" tone="blue" active={activeFilter === "APPROACHING"} onClick={() => onFilter("APPROACHING")} />
