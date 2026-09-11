@@ -32,6 +32,7 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
   const liveVehicle = isLive ? (vehicle as VehicleTelemetry) : null;
   const modelLabel = displayModel(vehicle);
   const expiryNotice = getExpiryNotice(vehicle.endDate);
+  const validityStatus = getValidityStatus(vehicle.endDate);
 
   useEffect(() => {
     setRouteSummary(null);
@@ -87,15 +88,16 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
         <Datum label="CODIGO DEALER" value={vehicle.dealerCode || "PENDIENTE"} />
         <Datum label="PLATAFORMA" value={vehicle.platform || "PENDIENTE"} />
         <Datum label="TIPO DISPOSITIVO" value={vehicle.deviceType || "PENDIENTE"} />
-        <Datum label="RED" value={vehicle.networkType || "PENDIENTE"} />
+        <Datum label="ESTADO VIGENCIA" value={validityStatus} />
         <Datum label="TIPO SIM" value={vehicle.simType || "PENDIENTE"} />
+        <Datum label="FECHA INICIO" value={formatDate(vehicle.startDate)} />
+        <Datum label="FECHA FIN" value={formatDate(vehicle.endDate)} />
         <Datum label="FASE" value={vehicle.phase || "PENDIENTE"} />
         <Datum label="BENEFICIO" value={vehicle.benefit || "PENDIENTE"} />
         <Datum label="TELEFONO" value={vehicle.phone || "PENDIENTE"} />
         <Datum label="EMAIL" value={vehicle.email || "PENDIENTE"} />
         <Datum label="COLOR" value={vehicle.color || "PENDIENTE"} />
         <Datum label="MOTOR" value={vehicle.engine || "PENDIENTE"} />
-        <Datum label="VIGENCIA" value={vehicle.endDate || "PENDIENTE"} />
         <Datum label="ESTADO SERVICIO" value={vehicle.serviceStatus || "PENDIENTE"} />
         <Datum label="VELOCIDAD" value={liveVehicle ? `${liveVehicle.speed} km/h` : "SIN POSICION"} />
         <Datum label="RUMBO" value={liveVehicle ? `${Math.round(liveVehicle.heading)} grados` : "SIN POSICION"} />
@@ -161,6 +163,23 @@ function getExpiryNotice(endDate?: string) {
   };
 }
 
+function getValidityStatus(endDate?: string) {
+  if (!endDate) return "PENDIENTE";
+  const expiration = new Date(`${endDate.slice(0, 10)}T23:59:59`);
+  if (Number.isNaN(expiration.getTime())) return "PENDIENTE";
+  const remainingDays = Math.ceil((expiration.getTime() - Date.now()) / 86_400_000);
+  if (remainingDays < 0) return "VENCIDO";
+  if (remainingDays <= 60) return "PROXIMO A VENCERSE";
+  return "VIGENTE";
+}
+
+function formatDate(value?: string) {
+  if (!value) return "PENDIENTE";
+  const normalized = value.slice(0, 10);
+  const [year, month, day] = normalized.split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
 function compactRouteEvents(points: RoutePoint[]) {
   if (points.length <= 60) return points;
   const step = Math.ceil(points.length / 60);
@@ -170,8 +189,11 @@ function compactRouteEvents(points: RoutePoint[]) {
 }
 
 function Datum({ label, value }: { label: string; value: string }) {
+  const validityClass = label === "ESTADO VIGENCIA"
+    ? ` validity-${value === "VIGENTE" ? "active" : value === "VENCIDO" ? "expired" : value === "PROXIMO A VENCERSE" ? "warning" : "pending"}`
+    : "";
   return (
-    <div>
+    <div className={validityClass.trim() || undefined}>
       <small>{label}</small>
       <strong>{value}</strong>
     </div>

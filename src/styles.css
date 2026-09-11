@@ -1701,6 +1701,13 @@ button.summary-card {
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
+.telemetry-grid .validity-active { border-color: rgba(35, 205, 132, 0.38); background: rgba(35, 205, 132, 0.08); }
+.telemetry-grid .validity-active strong { color: #35d996; }
+.telemetry-grid .validity-warning { border-color: rgba(255, 176, 32, 0.42); background: rgba(255, 176, 32, 0.08); }
+.telemetry-grid .validity-warning strong { color: #ffbd3d; }
+.telemetry-grid .validity-expired { border-color: rgba(235, 10, 30, 0.46); background: rgba(235, 10, 30, 0.09); }
+.telemetry-grid .validity-expired strong { color: #ff5665; }
+.telemetry-grid .validity-pending strong { color: #8a929e; }
 .panel-actions { display: grid; grid-template-columns: 1fr; gap: 7px; }
 .panel-actions button {
   display: flex;

@@ -25,7 +25,6 @@ import { LoadingScreen } from "./components/LoadingScreen";
 import { RadarMap } from "./components/RadarMap";
 import { ReplayControls } from "./components/ReplayControls";
 import { SearchBar } from "./components/SearchBar";
-import { StatusFilters } from "./components/StatusFilters";
 import { VehiclePanel } from "./components/VehiclePanel";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 import { useToyotaRadar } from "./hooks/useToyotaRadar";
@@ -264,7 +263,7 @@ export function App() {
             <div className="summary-toolbar">
               <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
               <div className="top-search">
-                <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+                <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
               </div>
             </div>
             <section className="content-grid">
@@ -291,7 +290,7 @@ export function App() {
 
         {activeView === "search" && (
           <section className="single-view compact-view">
-            <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+            <SearchPanel query={query} vehicles={vehicles} setQuery={setQuery} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
           </section>
         )}
 
@@ -436,9 +435,7 @@ function MapIndicators({
 function SearchPanel(props: {
   query: string;
   vehicles: VehicleTelemetry[];
-  filter: VehicleStatus | "ALL";
   setQuery: (query: string) => void;
-  setFilter: (filter: VehicleStatus | "ALL") => void;
   onSelect: (vehicle: VehicleTelemetry) => void;
   onSelectRecord: (record: VehicleSearchRecord) => void;
 }) {
@@ -446,7 +443,6 @@ function SearchPanel(props: {
     <section className="panel search-card">
       <PanelTitle title="Buscar vehiculo" />
       <SearchBar query={props.query} vehicles={props.vehicles} onQuery={props.setQuery} onSelect={props.onSelect} onSelectRecord={props.onSelectRecord} />
-      <StatusFilters active={props.filter} onChange={props.setFilter} />
       {!props.vehicles.length && <EmptyState title="Sin vehiculos reales" text="La busqueda se habilitara cuando el backend reciba telemetria real." />}
     </section>
   );
