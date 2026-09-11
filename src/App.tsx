@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Car,
@@ -64,6 +64,7 @@ export function App() {
   const [isolateSelected, setIsolateSelected] = useState(false);
   const [locatingVehicle, setLocatingVehicle] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const selectionRequestId = useRef(0);
   const hasSearchQuery = query.trim().length >= 2;
   const shouldShowOnlySelected = hasSearchQuery && isolateSelected && selected && isLiveVehicle(selected);
 
@@ -118,7 +119,23 @@ export function App() {
     setFilter((current) => (current === status ? "ALL" : status));
   };
 
+  const clearVehicleSelection = () => {
+    selectionRequestId.current += 1;
+    setSelected(null);
+    setFollow(false);
+    setIsolateSelected(false);
+    setLocatingVehicle(false);
+  };
+
+  const focusEvent = () => {
+    clearVehicleSelection();
+    setQuery("");
+    setFilter("ALL");
+    setEventFocusKey((value) => value + 1);
+  };
+
   const selectVehicle = async (vehicle: VehicleTelemetry) => {
+    const requestId = ++selectionRequestId.current;
     setLocatingVehicle(true);
     setSelected((current) => current && isLiveVehicle(current) && sameVehicle(current, vehicle) ? mergeSelectedWithFreshPosition(current, vehicle) : vehicle);
     setFilter("ALL");
@@ -127,13 +144,16 @@ export function App() {
 
     try {
       const enriched = await enrichSelectedVehicle(vehicle);
-      if (enriched) setSelected(mergeLiveWithRecord(vehicle, enriched));
+      if (enriched && requestId === selectionRequestId.current) setSelected(mergeLiveWithRecord(vehicle, enriched));
     } finally {
-      window.setTimeout(() => setLocatingVehicle(false), 350);
+      window.setTimeout(() => {
+        if (requestId === selectionRequestId.current) setLocatingVehicle(false);
+      }, 350);
     }
   };
 
   const openVehicleSummary = async (vehicle: VehicleTelemetry) => {
+    const requestId = ++selectionRequestId.current;
     setLocatingVehicle(true);
     setSelected(vehicle);
     setFilter("ALL");
@@ -144,13 +164,16 @@ export function App() {
 
     try {
       const enriched = await enrichSelectedVehicle(vehicle);
-      if (enriched) setSelected(mergeLiveWithRecord(vehicle, enriched));
+      if (enriched && requestId === selectionRequestId.current) setSelected(mergeLiveWithRecord(vehicle, enriched));
     } finally {
-      window.setTimeout(() => setLocatingVehicle(false), 350);
+      window.setTimeout(() => {
+        if (requestId === selectionRequestId.current) setLocatingVehicle(false);
+      }, 350);
     }
   };
 
   const focusSearchRecord = async (record: VehicleSearchRecord) => {
+    const requestId = ++selectionRequestId.current;
     setLocatingVehicle(true);
     const recordKeys = [record.plate, record.chassis, record.imei, record.deviceId].filter(Boolean).map((item) => normalizeKey(String(item)));
     const live = vehicles.find((vehicle) =>
@@ -169,17 +192,19 @@ export function App() {
     try {
       if (live) {
         const enriched = await enrichSelectedVehicle(mergeLiveWithRecord(live, record));
-        if (enriched) setSelected(mergeLiveWithRecord(live, enriched));
+        if (enriched && requestId === selectionRequestId.current) setSelected(mergeLiveWithRecord(live, enriched));
       } else {
         const located = await locateSearchRecord(record);
-        if (located) {
+        if (located && requestId === selectionRequestId.current) {
           setSelected(mergeLiveWithRecord(located, record));
           setIsolateSelected(true);
           setSelectedFocusKey((value) => value + 1);
         }
       }
     } finally {
-      window.setTimeout(() => setLocatingVehicle(false), 350);
+      window.setTimeout(() => {
+        if (requestId === selectionRequestId.current) setLocatingVehicle(false);
+      }, 350);
     }
   };
 
@@ -238,12 +263,12 @@ export function App() {
           <>
             <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
             <section className="content-grid">
-              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} />
+              <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={focusEvent} />
               <div className="side-stack">
                 <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
                 <section className="panel vehicle-card">
                   {selected ? (
-                    <VehiclePanel vehicle={selected} follow={follow} onClose={() => setSelected(null)} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={() => setEventFocusKey((value) => value + 1)} />
+                    <VehiclePanel vehicle={selected} follow={follow} onClose={clearVehicleSelection} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={focusEvent} />
                   ) : (
                     <EmptyState title="Sin vehiculo seleccionado" text="Cuando lleguen datos reales desde Flespi o MySQL, selecciona un vehiculo para ver su telemetria." />
                   )}
@@ -260,7 +285,7 @@ export function App() {
 
         {activeView === "map" && (
           <section className="single-view">
-            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={() => setEventFocusKey((value) => value + 1)} large />
+            <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={focusEvent} large />
           </section>
         )}
 
