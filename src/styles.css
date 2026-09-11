@@ -134,6 +134,10 @@ button { cursor: pointer; }
   isolation: isolate;
 }
 
+.system-dashboard.sidebar-collapsed {
+  grid-template-columns: 78px 1fr;
+}
+
 .system-dashboard::before,
 .system-dashboard::after {
   content: "";
@@ -203,6 +207,43 @@ button { cursor: pointer; }
   object-fit: contain;
   filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.22));
 }
+
+.sidebar-collapse {
+  flex: 0 0 34px;
+  display: grid !important;
+  place-items: center;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 7px;
+  color: #dce2eb !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.sidebar-collapse:hover {
+  color: #fff !important;
+  background: rgba(235, 10, 30, 0.22) !important;
+  transform: none !important;
+}
+
+.sidebar-collapse::before,
+.sidebar-collapse::after {
+  display: none !important;
+}
+
+.sidebar.collapsed .toyota-mark {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  height: 96px;
+  padding: 10px 0;
+}
+
+.sidebar.collapsed .toyota-mark img { width: 48px; }
+.sidebar.collapsed nav button { justify-content: center; padding: 0; }
+.sidebar.collapsed nav button > span { display: none; }
+.sidebar.collapsed .sidebar-status { display: none; }
 
 .toyota-mark div {
   display: none;
@@ -337,7 +378,7 @@ button { cursor: pointer; }
 .dashboard-main {
   position: relative;
   display: grid;
-  grid-template-rows: auto 104px auto minmax(260px, auto);
+  grid-template-rows: auto;
   gap: 16px;
   min-width: 0;
   min-height: calc(100vh - 24px);
@@ -357,13 +398,13 @@ button { cursor: pointer; }
 }
 
 .dashboard-main.view-map {
-  grid-template-rows: auto minmax(720px, calc(100vh - 154px));
+  grid-template-rows: minmax(720px, calc(100vh - 64px));
 }
 
 .dashboard-main.view-map .single-view,
 .dashboard-main.view-map .large-map-card {
-  min-height: calc(100vh - 154px);
-  height: calc(100vh - 154px);
+  min-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
 }
 
 .dashboard-main.view-map .large-map-card {
@@ -533,7 +574,17 @@ button.summary-card {
   height: 48px;
   border-radius: 8px;
   box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.045);
+  animation: indicatorSignal 2.4s ease-in-out infinite;
 }
+
+.summary-card strong {
+  animation: indicatorValue 2.4s ease-in-out infinite;
+}
+
+.summary-card:nth-child(3) div,
+.summary-card:nth-child(3) strong { animation-delay: 180ms; }
+.summary-card:nth-child(4) div,
+.summary-card:nth-child(4) strong { animation-delay: 360ms; }
 
 .summary-card.red { --card-accent: #ff3b4b; }
 .summary-card.green { --card-accent: #20c875; }
@@ -2049,6 +2100,14 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
 @keyframes headerScan { 0%, 12% { transform: translateX(0); opacity: 0; } 24% { opacity: 1; } 74%, 100% { transform: translateX(450%); opacity: 0; } }
 @keyframes navIconPulse { 50% { border-color: rgba(123, 215, 255, 0.72); box-shadow: 0 0 25px rgba(235, 10, 30, 0.3); } }
 @keyframes menuBeacon { 50% { border-color: rgba(235, 10, 30, 0.72); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.42), 0 0 26px rgba(235, 10, 30, 0.34); } }
+@keyframes indicatorSignal {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.28) drop-shadow(0 0 8px currentColor); }
+}
+@keyframes indicatorValue {
+  0%, 100% { text-shadow: 0 0 0 transparent; }
+  50% { text-shadow: 0 0 16px color-mix(in srgb, var(--card-accent) 74%, transparent); }
+}
 
 @media (max-width: 1180px) {
   .system-dashboard { grid-template-columns: 80px 1fr; }
@@ -2056,6 +2115,7 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .toyota-mark img { width: 52px; }
   .toyota-mark div { display: none; }
   .sidebar button { justify-content: center; padding: 0; font-size: 0; }
+  .sidebar-collapse { display: none !important; }
   .sidebar-status { display: none; }
   .content-grid, .bottom-grid { grid-template-columns: minmax(0, 1fr); }
   .content-grid { height: auto; }
@@ -2117,6 +2177,17 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
     pointer-events: auto;
     transform: translateX(0);
   }
+
+  .sidebar.collapsed .toyota-mark {
+    display: flex;
+    justify-content: flex-start;
+    height: 88px;
+    padding: 0 16px;
+  }
+  .sidebar.collapsed .toyota-mark img { width: 148px; }
+  .sidebar.collapsed nav button { justify-content: flex-start; padding: 0 18px; }
+  .sidebar.collapsed nav button > span { display: inline; }
+  .sidebar.collapsed .sidebar-status { display: grid; }
 
   .mobile-menu-toggle {
     position: fixed;
@@ -2315,7 +2386,9 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .system-dashboard::after,
   .dashboard-header::after,
   .sidebar button.active svg,
-  .mobile-menu-toggle {
+  .mobile-menu-toggle,
+  .summary-card div,
+  .summary-card strong {
     animation: none;
   }
 }

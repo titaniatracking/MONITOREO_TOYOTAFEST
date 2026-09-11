@@ -9,6 +9,8 @@ import {
   MapPinned,
   Menu,
   Navigation,
+  PanelLeftClose,
+  PanelLeftOpen,
   Route,
   Search,
   Settings,
@@ -64,6 +66,7 @@ export function App() {
   const [isolateSelected, setIsolateSelected] = useState(false);
   const [locatingVehicle, setLocatingVehicle] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const selectionRequestId = useRef(0);
   const hasSearchQuery = query.trim().length >= 2;
   const shouldShowOnlySelected = hasSearchQuery && isolateSelected && selected && isLiveVehicle(selected);
@@ -211,7 +214,7 @@ export function App() {
   if (loading) return <LoadingScreen />;
 
   return (
-    <main className="system-dashboard">
+    <main className={`system-dashboard ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
       <button
         className="mobile-menu-toggle"
         type="button"
@@ -223,19 +226,28 @@ export function App() {
         {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
       {mobileMenuOpen && <button className="mobile-menu-backdrop" type="button" aria-label="Cerrar menu" onClick={() => setMobileMenuOpen(false)} />}
-      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
+      <aside className={`sidebar ${sidebarCollapsed ? "collapsed" : ""} ${mobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="toyota-mark">
           <img src={TOYOTA_LOGO_URL} alt="Toyota" />
           <div>
             <strong>TOYOTA</strong>
             <span>Experience Fest</span>
           </div>
+          <button
+            className="sidebar-collapse"
+            type="button"
+            aria-label={sidebarCollapsed ? "Expandir menu" : "Contraer menu"}
+            title={sidebarCollapsed ? "Expandir menu" : "Contraer menu"}
+            onClick={() => setSidebarCollapsed((value) => !value)}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </button>
         </div>
         <nav id="main-navigation">
           {menuItems.map((item) => (
             <button key={item.key} className={activeView === item.key ? "active" : ""} onClick={() => { setActiveView(item.key); setMobileMenuOpen(false); }}>
               {item.icon}
-              {item.label}
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -247,18 +259,6 @@ export function App() {
       </aside>
 
       <section className={`dashboard-main view-${activeView}`}>
-        <header className="dashboard-header">
-          <div>
-            <h1><span>TOYOTA</span> Experience Fest</h1>
-            <p>Sistema de rastreo vehicular en tiempo real sobre mapa de Quito</p>
-          </div>
-          <div className="header-meta">
-            <span>{loadingRealData ? "Cargando datos reales" : `${vehicles.length} vehiculos reales`}</span>
-            <span>{new Date().toLocaleDateString("es-EC", { day: "2-digit", month: "long", year: "numeric" })}</span>
-            <span>{lastUpdate.toLocaleTimeString("es-EC", { hour: "2-digit", minute: "2-digit" })}</span>
-          </div>
-        </header>
-
         {activeView === "summary" && (
           <>
             <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
