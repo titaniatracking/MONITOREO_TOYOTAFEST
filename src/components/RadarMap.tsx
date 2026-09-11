@@ -44,13 +44,6 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
     lng: eventPolygon.reduce((total, point) => total + point.lng, 0) / eventPolygon.length,
   }), [eventPolygon]);
   const geofencePoints = useMemo(() => eventPolygon.map((point) => projectToMap(point, mapBounds)), [eventPolygon, mapBounds]);
-  const geofenceLabel = useMemo(
-    () => ({
-      x: geofencePoints.reduce((total, point) => total + point.x, 0) / geofencePoints.length,
-      y: geofencePoints.reduce((total, point) => total + point.y, 0) / geofencePoints.length,
-    }),
-    [geofencePoints]
-  );
   const visibleVehicles = useMemo(
     () =>
       vehicles.filter((vehicle) => {
@@ -188,10 +181,6 @@ export function RadarMap({ vehicles, eventPolygon, selectedId, radarMode, cinema
             />
           )}
         </svg>
-
-        <div className="event-geofence-label" style={{ left: `${geofenceLabel.x}%`, top: `${geofenceLabel.y}%` }}>
-          GEOCERCA EVENTO
-        </div>
 
         {visibleVehicles.map((vehicle) => (
           <VehicleTarget key={vehicle.id} vehicle={vehicle} selected={selectedId === vehicle.id} mapBounds={mapBounds} onSelect={() => onSelect(vehicle)} />
