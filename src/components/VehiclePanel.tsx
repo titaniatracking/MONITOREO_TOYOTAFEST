@@ -1,4 +1,4 @@
-import { Crosshair, MapPinned, Navigation, Route, X } from "lucide-react";
+import { AlertTriangle, Crosshair, MapPinned, Navigation, Route, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { VehicleSearchRecord, VehicleTelemetry } from "../types";
 import { apiUrl } from "../utils/api";
@@ -31,6 +31,7 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
   const isLive = Number.isFinite(Number((vehicle as VehicleTelemetry).lat)) && Number.isFinite(Number((vehicle as VehicleTelemetry).lng));
   const liveVehicle = isLive ? (vehicle as VehicleTelemetry) : null;
   const modelLabel = displayModel(vehicle);
+  const expiryNotice = getExpiryNotice(vehicle.endDate);
 
   useEffect(() => {
     setRouteSummary(null);
@@ -68,6 +69,12 @@ export function VehiclePanel({ vehicle, follow, onClose, onFollow, onCenterVehic
       <span className={`status-pill status-${(vehicle.status ?? "OFFLINE").toLowerCase()}`}>{liveVehicle ? statusLabel(liveVehicle.status) : "Registro base central"}</span>
       <p className="vehicle-model">{modelLabel}</p>
       <p className="vehicle-owner">{vehicle.owner && vehicle.owner !== "Dato real" ? vehicle.owner : "Cliente pendiente en base"}</p>
+      {expiryNotice && (
+        <div className={`expiry-notice ${expiryNotice.expired ? "expired" : ""}`}>
+          <AlertTriangle size={18} />
+          <span><b>{expiryNotice.title}</b><small>{expiryNotice.detail}</small></span>
+        </div>
+      )}
 
       <div className="telemetry-grid">
         <Datum label="MODELO" value={modelLabel} />
@@ -133,6 +140,25 @@ function displayModel(vehicle: VehicleTelemetry | VehicleSearchRecord) {
 
   const fallback = [vehicle.brand, vehicle.year].filter(Boolean).join(" ").trim();
   return fallback || "MODELO PENDIENTE";
+}
+
+function getExpiryNotice(endDate?: string) {
+  if (!endDate || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return null;
+  const expiration = new Date(`${endDate}T23:59:59`);
+  const remainingDays = Math.ceil((expiration.getTime() - Date.now()) / 86_400_000);
+  if (remainingDays > 60) return null;
+  if (remainingDays < 0) {
+    return {
+      expired: true,
+      title: "SERVICIO VENCIDO",
+      detail: `Vencio hace ${Math.abs(remainingDays)} dias (${endDate}).`,
+    };
+  }
+  return {
+    expired: false,
+    title: "PROXIMO A VENCER",
+    detail: `Faltan ${remainingDays} dias para el vencimiento (${endDate}).`,
+  };
 }
 
 function compactRouteEvents(points: RoutePoint[]) {

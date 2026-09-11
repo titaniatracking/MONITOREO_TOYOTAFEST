@@ -66,7 +66,7 @@ export function App() {
   const [isolateSelected, setIsolateSelected] = useState(false);
   const [locatingVehicle, setLocatingVehicle] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const selectionRequestId = useRef(0);
   const hasSearchQuery = query.trim().length >= 2;
   const shouldShowOnlySelected = hasSearchQuery && isolateSelected && selected && isLiveVehicle(selected);
@@ -262,18 +262,16 @@ export function App() {
         {activeView === "summary" && (
           <>
             <SummaryRow stats={stats} totalVehicles={vehicles.length} activeFilter={filter} onFilter={selectStatusFilter} />
+            <div className="top-search">
+              <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+            </div>
             <section className="content-grid">
               <MapPanel stats={stats} activeFilter={filter} onFilter={selectStatusFilter} vehicles={mapVehicles} eventPolygon={eventPolygon} selected={isLiveVehicle(selected) ? selected : null} radarMode={radarMode} cinematicMode={cinematicMode} showHeatmap={showHeatmap} isolateSelected={Boolean(shouldShowOnlySelected)} canIsolateSelected={hasSearchQuery} loading={loadingRealData} locatingVehicle={locatingVehicle} eventFocusKey={eventFocusKey} selectedFocusKey={selectedFocusKey} onSelect={selectVehicle} onRadarMode={() => setRadarMode((value) => !value)} onCinematicMode={() => setCinematicMode((value) => !value)} onHeatmap={() => setShowHeatmap((value) => !value)} onToggleIsolate={() => setIsolateSelected((value) => !value)} onEventFocus={focusEvent} />
-              <div className="side-stack">
-                <SearchPanel query={query} vehicles={vehicles} filter={filter} setQuery={setQuery} setFilter={setFilter} onSelect={openVehicleSummary} onSelectRecord={focusSearchRecord} />
+              {selected && (
                 <section className="panel vehicle-card">
-                  {selected ? (
-                    <VehiclePanel vehicle={selected} follow={follow} onClose={clearVehicleSelection} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={focusEvent} />
-                  ) : (
-                    <EmptyState title="Sin vehiculo seleccionado" text="Cuando lleguen datos reales desde Flespi o MySQL, selecciona un vehiculo para ver su telemetria." />
-                  )}
+                  <VehiclePanel vehicle={selected} follow={follow} onClose={clearVehicleSelection} onFollow={() => setFollow((value) => !value)} onCenterVehicle={() => { if (hasSearchQuery) setIsolateSelected(true); setSelectedFocusKey((value) => value + 1); }} onCenterEvent={focusEvent} />
                 </section>
-              </div>
+              )}
             </section>
             <section className="bottom-grid">
               <RoutesPanel vehicles={vehicles} onSelect={openVehicleSummary} />

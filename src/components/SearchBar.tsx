@@ -23,6 +23,13 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
   );
 
   useEffect(() => {
+    if (!query.trim()) {
+      setDeferredQuery("");
+      setBaseRecords([]);
+      setAnalyzing(false);
+      setSearchRequest((current) => current.term ? { term: "", key: current.key + 1 } : current);
+      return;
+    }
     const timer = window.setTimeout(() => setDeferredQuery(query), 180);
     setBaseRecords([]);
     setAnalyzing(false);
@@ -63,7 +70,7 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
   const results = useMemo(() => {
     const rows = searchTerm
       ? indexedVehicles.filter((row) => row.searchText.includes(searchTerm)).map((row) => row.vehicle)
-      : vehicles;
+      : [];
     return rows.slice(0, 80);
   }, [indexedVehicles, searchTerm, vehicles]);
 
@@ -92,7 +99,7 @@ export function SearchBar({ query, vehicles, onQuery, onSelect, onSelectRecord }
           <b>Analizando base central</b>
         </div>
       )}
-      <div className="search-count">{results.length + mergedBaseRecords.length} visibles / {vehicles.length} con telemetria</div>
+      {searchTerm && <div className="search-count">{results.length + mergedBaseRecords.length} visibles / {vehicles.length} con telemetria</div>}
       {(results.length > 0 || mergedBaseRecords.length > 0) && (
         <div className="search-results">
           {results.map((vehicle) => (

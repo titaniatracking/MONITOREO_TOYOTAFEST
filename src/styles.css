@@ -609,6 +609,31 @@ button.summary-card {
   height: auto;
 }
 
+.top-search {
+  width: min(100%, 1280px);
+  justify-self: center;
+}
+
+.top-search .search-card {
+  height: auto;
+  min-height: 0;
+}
+
+.top-search .search-box {
+  height: auto;
+  overflow: visible;
+}
+
+.top-search .search-results {
+  max-height: 280px;
+}
+
+.content-grid > .vehicle-card {
+  width: min(100%, 1280px);
+  height: 620px;
+  justify-self: center;
+}
+
 .side-stack {
   width: min(100%, 1280px);
   min-width: 0;
@@ -1602,6 +1627,27 @@ button.summary-card {
 
 .status-pill { margin: 10px 0; }
 .vehicle-model, .vehicle-owner { margin: 4px 0; color: #b7bdc6; font-size: 12px; }
+.expiry-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 176, 32, 0.5);
+  border-radius: 6px;
+  color: #ffbf3f;
+  background: rgba(255, 176, 32, 0.1);
+  box-shadow: inset 3px 0 0 #ffb020, 0 0 20px rgba(255, 176, 32, 0.08);
+}
+.expiry-notice.expired {
+  border-color: rgba(235, 10, 30, 0.54);
+  color: #ff5665;
+  background: rgba(235, 10, 30, 0.11);
+  box-shadow: inset 3px 0 0 #eb0a1e, 0 0 20px rgba(235, 10, 30, 0.1);
+}
+.expiry-notice span { display: grid; gap: 3px; }
+.expiry-notice b { font-family: var(--font-display); font-size: 10px; letter-spacing: 0; }
+.expiry-notice small { color: #d8dde5; font-size: 10px; }
 .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 14px 0; }
 .telemetry-grid div {
   padding: 8px;
