@@ -37,8 +37,8 @@ body,
 
 body {
   margin: 0;
-  overflow-x: hidden;
-  overflow: auto;
+  overflow-x: clip;
+  overflow-y: visible;
   background:
     linear-gradient(180deg, rgba(5, 7, 10, 0.8), rgba(5, 7, 10, 0.93)),
     url("/experiencefest/event-watermark-bg.jpg") center / cover fixed no-repeat,
@@ -2046,7 +2046,10 @@ tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
   .summary-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .map-indicators { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-main { overflow: visible; grid-template-rows: auto auto auto auto; }
-  body { overflow: auto; }
+  body {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
 }
 
 @media (max-width: 820px) {
